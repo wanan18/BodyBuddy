@@ -1,0 +1,663 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F200E57D2EBBC0230005E398 /* SessionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E57C2EBBC0230005E398 /* SessionsListView.swift */; };
+		F200E57F2EBBC0F20005E398 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E57E2EBBC0F20005E398 /* Models.swift */; };
+		F200E5812EBBC1130005E398 /* WorkoutStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E5802EBBC1130005E398 /* WorkoutStore.swift */; };
+		F200E5832EBBC2320005E398 /* NutritionHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E5822EBBC2320005E398 /* NutritionHomeView.swift */; };
+		F200E5852EBBC24C0005E398 /* HeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E5842EBBC24C0005E398 /* HeatmapView.swift */; };
+		F200E5872EBBC2610005E398 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E5862EBBC2610005E398 /* ProfileView.swift */; };
+		F200E5892EBBC3110005E398 /* SessionsCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E5882EBBC3110005E398 /* SessionsCalendarView.swift */; };
+		F200E58B2EBBC52B0005E398 /* SessionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E58A2EBBC52B0005E398 /* SessionRow.swift */; };
+		F200E58D2EBBC62B0005E398 /* InMemorySessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E58C2EBBC62B0005E398 /* InMemorySessionDetailView.swift */; };
+		F200E58F2EBBD0B50005E398 /* ProgressChartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F200E58E2EBBD0B50005E398 /* ProgressChartsView.swift */; };
+		F2B0C7C62EA98DCC00B72A19 /* BodyBuddy.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F2B0C7C42EA98DCC00B72A19 /* BodyBuddy.xcdatamodeld */; };
+		F2B0C7C82EA9968C00B72A19 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B0C7C72EA9968C00B72A19 /* Persistence.swift */; };
+		F2D3D2E92EA9A479004A6D3A /* TrainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D3D2E82EA9A479004A6D3A /* TrainView.swift */; };
+		F2D3D2EB2EA9A482004A6D3A /* NewSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D3D2EA2EA9A482004A6D3A /* NewSessionView.swift */; };
+		F2D3D2ED2EA9A489004A6D3A /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D3D2EC2EA9A489004A6D3A /* SessionDetailView.swift */; };
+		F2D3D2EF2EA9A491004A6D3A /* QuickLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D3D2EE2EA9A491004A6D3A /* QuickLogView.swift */; };
+		F2D3D2F12EA9A499004A6D3A /* ProgressViewCharts.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D3D2F02EA9A499004A6D3A /* ProgressViewCharts.swift */; };
+		F2D3D2F32EA9A4A0004A6D3A /* MuscleMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D3D2F22EA9A4A0004A6D3A /* MuscleMapView.swift */; };
+		F2D3D2F52EA9A71F004A6D3A /* SeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D3D2F42EA9A71F004A6D3A /* SeedData.swift */; };
+		F2DD65012ECAEF9A00E246E9 /* ExerciseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DD65002ECAEF9A00E246E9 /* ExerciseListView.swift */; };
+		F2DD65032ECAEFCA00E246E9 /* ExerciseFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DD65022ECAEFCA00E246E9 /* ExerciseFormView.swift */; };
+		F2DD65072ECB154800E246E9 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2DD65062ECB154800E246E9 /* HomeView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F2B0C7A82EA98BA000B72A19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F2B0C78F2EA98B9E00B72A19 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F2B0C7962EA98B9E00B72A19;
+			remoteInfo = BodyBuddy;
+		};
+		F2B0C7B22EA98BA000B72A19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F2B0C78F2EA98B9E00B72A19 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F2B0C7962EA98B9E00B72A19;
+			remoteInfo = BodyBuddy;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		F200E57C2EBBC0230005E398 /* SessionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsListView.swift; sourceTree = "<group>"; };
+		F200E57E2EBBC0F20005E398 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		F200E5802EBBC1130005E398 /* WorkoutStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutStore.swift; sourceTree = "<group>"; };
+		F200E5822EBBC2320005E398 /* NutritionHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionHomeView.swift; sourceTree = "<group>"; };
+		F200E5842EBBC24C0005E398 /* HeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapView.swift; sourceTree = "<group>"; };
+		F200E5862EBBC2610005E398 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		F200E5882EBBC3110005E398 /* SessionsCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsCalendarView.swift; sourceTree = "<group>"; };
+		F200E58A2EBBC52B0005E398 /* SessionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRow.swift; sourceTree = "<group>"; };
+		F200E58C2EBBC62B0005E398 /* InMemorySessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InMemorySessionDetailView.swift; sourceTree = "<group>"; };
+		F200E58E2EBBD0B50005E398 /* ProgressChartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressChartsView.swift; sourceTree = "<group>"; };
+		F2B0C7972EA98B9E00B72A19 /* BodyBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BodyBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F2B0C7A72EA98BA000B72A19 /* BodyBuddyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BodyBuddyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F2B0C7B12EA98BA000B72A19 /* BodyBuddyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BodyBuddyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F2B0C7C52EA98DCC00B72A19 /* BodyBuddy.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = BodyBuddy.xcdatamodel; sourceTree = "<group>"; };
+		F2B0C7C72EA9968C00B72A19 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
+		F2D3D2E82EA9A479004A6D3A /* TrainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainView.swift; sourceTree = "<group>"; };
+		F2D3D2EA2EA9A482004A6D3A /* NewSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewSessionView.swift; sourceTree = "<group>"; };
+		F2D3D2EC2EA9A489004A6D3A /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		F2D3D2EE2EA9A491004A6D3A /* QuickLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickLogView.swift; sourceTree = "<group>"; };
+		F2D3D2F02EA9A499004A6D3A /* ProgressViewCharts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressViewCharts.swift; sourceTree = "<group>"; };
+		F2D3D2F22EA9A4A0004A6D3A /* MuscleMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleMapView.swift; sourceTree = "<group>"; };
+		F2D3D2F42EA9A71F004A6D3A /* SeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeedData.swift; sourceTree = "<group>"; };
+		F2DD65002ECAEF9A00E246E9 /* ExerciseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseListView.swift; sourceTree = "<group>"; };
+		F2DD65022ECAEFCA00E246E9 /* ExerciseFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseFormView.swift; sourceTree = "<group>"; };
+		F2DD65062ECB154800E246E9 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		F2B0C7992EA98B9E00B72A19 /* BodyBuddy */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BodyBuddy;
+			sourceTree = "<group>";
+		};
+		F2B0C7AA2EA98BA000B72A19 /* BodyBuddyTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BodyBuddyTests;
+			sourceTree = "<group>";
+		};
+		F2B0C7B42EA98BA000B72A19 /* BodyBuddyUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BodyBuddyUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F2B0C7942EA98B9E00B72A19 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2B0C7A42EA98BA000B72A19 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2B0C7AE2EA98BA000B72A19 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F2B0C78E2EA98B9E00B72A19 = {
+			isa = PBXGroup;
+			children = (
+				F2DD65062ECB154800E246E9 /* HomeView.swift */,
+				F2DD65022ECAEFCA00E246E9 /* ExerciseFormView.swift */,
+				F2DD65002ECAEF9A00E246E9 /* ExerciseListView.swift */,
+				F200E58E2EBBD0B50005E398 /* ProgressChartsView.swift */,
+				F200E58C2EBBC62B0005E398 /* InMemorySessionDetailView.swift */,
+				F200E58A2EBBC52B0005E398 /* SessionRow.swift */,
+				F200E5882EBBC3110005E398 /* SessionsCalendarView.swift */,
+				F200E5862EBBC2610005E398 /* ProfileView.swift */,
+				F200E5842EBBC24C0005E398 /* HeatmapView.swift */,
+				F200E5822EBBC2320005E398 /* NutritionHomeView.swift */,
+				F200E5802EBBC1130005E398 /* WorkoutStore.swift */,
+				F200E57E2EBBC0F20005E398 /* Models.swift */,
+				F200E57C2EBBC0230005E398 /* SessionsListView.swift */,
+				F2D3D2F42EA9A71F004A6D3A /* SeedData.swift */,
+				F2D3D2E82EA9A479004A6D3A /* TrainView.swift */,
+				F2D3D2EA2EA9A482004A6D3A /* NewSessionView.swift */,
+				F2D3D2EC2EA9A489004A6D3A /* SessionDetailView.swift */,
+				F2D3D2EE2EA9A491004A6D3A /* QuickLogView.swift */,
+				F2D3D2F02EA9A499004A6D3A /* ProgressViewCharts.swift */,
+				F2D3D2F22EA9A4A0004A6D3A /* MuscleMapView.swift */,
+				F2B0C7C72EA9968C00B72A19 /* Persistence.swift */,
+				F2B0C7C42EA98DCC00B72A19 /* BodyBuddy.xcdatamodeld */,
+				F2B0C7992EA98B9E00B72A19 /* BodyBuddy */,
+				F2B0C7AA2EA98BA000B72A19 /* BodyBuddyTests */,
+				F2B0C7B42EA98BA000B72A19 /* BodyBuddyUITests */,
+				F2B0C7982EA98B9E00B72A19 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F2B0C7982EA98B9E00B72A19 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F2B0C7972EA98B9E00B72A19 /* BodyBuddy.app */,
+				F2B0C7A72EA98BA000B72A19 /* BodyBuddyTests.xctest */,
+				F2B0C7B12EA98BA000B72A19 /* BodyBuddyUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F2B0C7962EA98B9E00B72A19 /* BodyBuddy */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2B0C7BB2EA98BA000B72A19 /* Build configuration list for PBXNativeTarget "BodyBuddy" */;
+			buildPhases = (
+				F2B0C7932EA98B9E00B72A19 /* Sources */,
+				F2B0C7942EA98B9E00B72A19 /* Frameworks */,
+				F2B0C7952EA98B9E00B72A19 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				F2B0C7992EA98B9E00B72A19 /* BodyBuddy */,
+			);
+			name = BodyBuddy;
+			packageProductDependencies = (
+			);
+			productName = BodyBuddy;
+			productReference = F2B0C7972EA98B9E00B72A19 /* BodyBuddy.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F2B0C7A62EA98BA000B72A19 /* BodyBuddyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2B0C7BE2EA98BA000B72A19 /* Build configuration list for PBXNativeTarget "BodyBuddyTests" */;
+			buildPhases = (
+				F2B0C7A32EA98BA000B72A19 /* Sources */,
+				F2B0C7A42EA98BA000B72A19 /* Frameworks */,
+				F2B0C7A52EA98BA000B72A19 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F2B0C7A92EA98BA000B72A19 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F2B0C7AA2EA98BA000B72A19 /* BodyBuddyTests */,
+			);
+			name = BodyBuddyTests;
+			packageProductDependencies = (
+			);
+			productName = BodyBuddyTests;
+			productReference = F2B0C7A72EA98BA000B72A19 /* BodyBuddyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F2B0C7B02EA98BA000B72A19 /* BodyBuddyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2B0C7C12EA98BA000B72A19 /* Build configuration list for PBXNativeTarget "BodyBuddyUITests" */;
+			buildPhases = (
+				F2B0C7AD2EA98BA000B72A19 /* Sources */,
+				F2B0C7AE2EA98BA000B72A19 /* Frameworks */,
+				F2B0C7AF2EA98BA000B72A19 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F2B0C7B32EA98BA000B72A19 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				F2B0C7B42EA98BA000B72A19 /* BodyBuddyUITests */,
+			);
+			name = BodyBuddyUITests;
+			packageProductDependencies = (
+			);
+			productName = BodyBuddyUITests;
+			productReference = F2B0C7B12EA98BA000B72A19 /* BodyBuddyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F2B0C78F2EA98B9E00B72A19 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					F2B0C7962EA98B9E00B72A19 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					F2B0C7A62EA98BA000B72A19 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = F2B0C7962EA98B9E00B72A19;
+					};
+					F2B0C7B02EA98BA000B72A19 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = F2B0C7962EA98B9E00B72A19;
+					};
+				};
+			};
+			buildConfigurationList = F2B0C7922EA98B9E00B72A19 /* Build configuration list for PBXProject "BodyBuddy" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = F2B0C78E2EA98B9E00B72A19;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F2B0C7982EA98B9E00B72A19 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F2B0C7962EA98B9E00B72A19 /* BodyBuddy */,
+				F2B0C7A62EA98BA000B72A19 /* BodyBuddyTests */,
+				F2B0C7B02EA98BA000B72A19 /* BodyBuddyUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F2B0C7952EA98B9E00B72A19 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2B0C7A52EA98BA000B72A19 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2B0C7AF2EA98BA000B72A19 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F2B0C7932EA98B9E00B72A19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F200E58F2EBBD0B50005E398 /* ProgressChartsView.swift in Sources */,
+				F200E5852EBBC24C0005E398 /* HeatmapView.swift in Sources */,
+				F2D3D2EB2EA9A482004A6D3A /* NewSessionView.swift in Sources */,
+				F2DD65072ECB154800E246E9 /* HomeView.swift in Sources */,
+				F2D3D2ED2EA9A489004A6D3A /* SessionDetailView.swift in Sources */,
+				F200E5832EBBC2320005E398 /* NutritionHomeView.swift in Sources */,
+				F200E5892EBBC3110005E398 /* SessionsCalendarView.swift in Sources */,
+				F200E58D2EBBC62B0005E398 /* InMemorySessionDetailView.swift in Sources */,
+				F2D3D2E92EA9A479004A6D3A /* TrainView.swift in Sources */,
+				F2DD65032ECAEFCA00E246E9 /* ExerciseFormView.swift in Sources */,
+				F2D3D2F32EA9A4A0004A6D3A /* MuscleMapView.swift in Sources */,
+				F2D3D2F12EA9A499004A6D3A /* ProgressViewCharts.swift in Sources */,
+				F200E58B2EBBC52B0005E398 /* SessionRow.swift in Sources */,
+				F200E5872EBBC2610005E398 /* ProfileView.swift in Sources */,
+				F2D3D2F52EA9A71F004A6D3A /* SeedData.swift in Sources */,
+				F200E57D2EBBC0230005E398 /* SessionsListView.swift in Sources */,
+				F2B0C7C82EA9968C00B72A19 /* Persistence.swift in Sources */,
+				F2B0C7C62EA98DCC00B72A19 /* BodyBuddy.xcdatamodeld in Sources */,
+				F200E5812EBBC1130005E398 /* WorkoutStore.swift in Sources */,
+				F2D3D2EF2EA9A491004A6D3A /* QuickLogView.swift in Sources */,
+				F200E57F2EBBC0F20005E398 /* Models.swift in Sources */,
+				F2DD65012ECAEF9A00E246E9 /* ExerciseListView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2B0C7A32EA98BA000B72A19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2B0C7AD2EA98BA000B72A19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F2B0C7A92EA98BA000B72A19 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F2B0C7962EA98B9E00B72A19 /* BodyBuddy */;
+			targetProxy = F2B0C7A82EA98BA000B72A19 /* PBXContainerItemProxy */;
+		};
+		F2B0C7B32EA98BA000B72A19 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F2B0C7962EA98B9E00B72A19 /* BodyBuddy */;
+			targetProxy = F2B0C7B22EA98BA000B72A19 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		F2B0C7B92EA98BA000B72A19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		F2B0C7BA2EA98BA000B72A19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F2B0C7BC2EA98BA000B72A19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"BodyBuddy/Preview Content\"";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anan.BodyBuddy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F2B0C7BD2EA98BA000B72A19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"BodyBuddy/Preview Content\"";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anan.BodyBuddy;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		F2B0C7BF2EA98BA000B72A19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anan.BodyBuddyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BodyBuddy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BodyBuddy";
+			};
+			name = Debug;
+		};
+		F2B0C7C02EA98BA000B72A19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anan.BodyBuddyTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BodyBuddy.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BodyBuddy";
+			};
+			name = Release;
+		};
+		F2B0C7C22EA98BA000B72A19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anan.BodyBuddyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BodyBuddy;
+			};
+			name = Debug;
+		};
+		F2B0C7C32EA98BA000B72A19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = anan.BodyBuddyUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BodyBuddy;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F2B0C7922EA98B9E00B72A19 /* Build configuration list for PBXProject "BodyBuddy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F2B0C7B92EA98BA000B72A19 /* Debug */,
+				F2B0C7BA2EA98BA000B72A19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F2B0C7BB2EA98BA000B72A19 /* Build configuration list for PBXNativeTarget "BodyBuddy" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F2B0C7BC2EA98BA000B72A19 /* Debug */,
+				F2B0C7BD2EA98BA000B72A19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F2B0C7BE2EA98BA000B72A19 /* Build configuration list for PBXNativeTarget "BodyBuddyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F2B0C7BF2EA98BA000B72A19 /* Debug */,
+				F2B0C7C02EA98BA000B72A19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F2B0C7C12EA98BA000B72A19 /* Build configuration list for PBXNativeTarget "BodyBuddyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F2B0C7C22EA98BA000B72A19 /* Debug */,
+				F2B0C7C32EA98BA000B72A19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		F2B0C7C42EA98DCC00B72A19 /* BodyBuddy.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				F2B0C7C52EA98DCC00B72A19 /* BodyBuddy.xcdatamodel */,
+			);
+			currentVersion = F2B0C7C52EA98DCC00B72A19 /* BodyBuddy.xcdatamodel */;
+			path = BodyBuddy.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
+	};
+	rootObject = F2B0C78F2EA98B9E00B72A19 /* Project object */;
+}
