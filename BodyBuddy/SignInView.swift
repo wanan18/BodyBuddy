@@ -1,0 +1,40 @@
+//
+//  SignInView.swift
+//  BodyBuddy
+//
+//  Created by William Anan on 3/23/26.
+//
+
+import SwiftUI
+
+struct SignInView: View {
+    @StateObject private var viewModel = AuthViewModel()
+    @EnvironmentObject var appState: AppState
+
+    var body: some View {
+        Form {
+            TextField("Email", text: $viewModel.email)
+                .textInputAutocapitalization(.never)
+                .keyboardType(.emailAddress)
+                .autocorrectionDisabled()
+
+            SecureField("Password", text: $viewModel.password)
+
+            if !viewModel.errorMessage.isEmpty {
+                Text(viewModel.errorMessage)
+                    .foregroundStyle(.red)
+            }
+
+            Button("Sign In") {
+                Task {
+                    let success = await viewModel.signIn()
+                    if success {
+                        await appState.loadSession()
+                    }
+                }
+            }
+            .disabled(viewModel.email.isEmpty || viewModel.password.isEmpty || viewModel.isLoading)
+        }
+        .navigationTitle("Sign In")
+    }
+}
