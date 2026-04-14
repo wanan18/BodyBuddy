@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import Combine
+import Supabase
 
 struct HomeView: View {
     @State private var selectedTab: AppTab = .dashboard
@@ -284,13 +286,13 @@ private struct DashboardView: View {
 }
 
 private struct ExerciseLogView: View {
-    @State private var sessions = WorkoutSession.sampleData
+    @StateObject private var store = WorkoutLogStore()
     @State private var selectedMode: ExerciseLogMode = .list
     @State private var selectedCalendarDate = Date()
     @State private var navigationPath: [UUID] = []
 
     private var sortedSessions: [WorkoutSession] {
-        sessions.sorted { $0.date > $1.date }
+        store.sessions.sorted { $0.date > $1.date }
     }
 
     var body: some View {
@@ -299,11 +301,31 @@ private struct ExerciseLogView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     header
 
-                    switch selectedMode {
-                    case .list:
-                        sessionList
-                    case .calendar:
-                        calendarView
+                    if store.isLoading {
+                        ProgressView("Loading sessions...")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 40)
+                    } else {
+                        if let errorMessage = store.errorMessage {
+                            Text(errorMessage)
+                                .font(.subheadline)
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                                .background(Color(.secondarySystemGroupedBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+
+                        if store.sessions.isEmpty {
+                            emptyState
+                        } else {
+                            switch selectedMode {
+                            case .list:
+                                sessionList
+                            case .calendar:
+                                calendarView
+                            }
+                        }
                     }
                 }
                 .padding()
@@ -312,8 +334,10 @@ private struct ExerciseLogView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Exercise Log")
             .navigationDestination(for: UUID.self) { sessionID in
-                if let index = sessions.firstIndex(where: { $0.id == sessionID }) {
-                    SessionEditorView(session: $sessions[index])
+                if let index = store.sessions.firstIndex(where: { $0.id == sessionID }) {
+                    SessionEditorView(session: $store.sessions[index]) { session in
+                        await store.saveSession(session)
+                    }
                 } else {
                     Text("Session not found")
                 }
@@ -330,6 +354,12 @@ private struct ExerciseLogView: View {
                     .frame(width: 112)
                 }
             }
+            .task {
+                await store.loadSessions()
+            }
+            .refreshable {
+                await store.loadSessions()
+            }
         }
     }
 
@@ -345,8 +375,11 @@ private struct ExerciseLogView: View {
 
             Button {
                 let newSession = WorkoutSession.empty
-                sessions.append(newSession)
+                store.sessions.append(newSession)
                 navigationPath.append(newSession.id)
+                Task {
+                    await store.saveSession(newSession)
+                }
             } label: {
                 Label("Create Session", systemImage: "plus.circle.fill")
                     .fontWeight(.semibold)
@@ -358,6 +391,25 @@ private struct ExerciseLogView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private var emptyState: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Image(systemName: "dumbbell")
+                .font(.title2)
+                .foregroundStyle(.blue)
+
+            Text("No sessions yet")
+                .font(.headline)
+
+            Text("Create your first session and your exercises, sets, reps, weight, and RPE will save to Supabase.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private var sessionList: some View {
@@ -374,7 +426,7 @@ private struct ExerciseLogView: View {
     private var calendarView: some View {
         VStack(alignment: .leading, spacing: 16) {
             WorkoutCalendarView(
-                sessions: sessions,
+                sessions: store.sessions,
                 selectedDate: $selectedCalendarDate
             )
 
@@ -382,7 +434,7 @@ private struct ExerciseLogView: View {
                 Text("Sessions")
                     .font(.headline)
 
-                let sessionsForDay = sessions.filter {
+                let sessionsForDay = store.sessions.filter {
                     Calendar.current.isDate($0.date, inSameDayAs: selectedCalendarDate)
                 }
                 .sorted { $0.date > $1.date }
@@ -577,6 +629,7 @@ private struct CalendarDayCell: View {
 
 private struct SessionEditorView: View {
     @Binding var session: WorkoutSession
+    let onSave: (WorkoutSession) async -> Void
 
     var body: some View {
         Form {
@@ -588,17 +641,25 @@ private struct SessionEditorView: View {
             Section("Exercises") {
                 ForEach($session.exercises) { $exercise in
                     NavigationLink {
-                        ExerciseEditorView(exercise: $exercise)
+                        ExerciseEditorView(exercise: $exercise) {
+                            await onSave(session)
+                        }
                     } label: {
                         ExerciseSummaryRow(exercise: exercise)
                     }
                 }
                 .onDelete { offsets in
                     session.exercises.remove(atOffsets: offsets)
+                    Task {
+                        await onSave(session)
+                    }
                 }
 
                 Button {
                     session.exercises.append(.empty)
+                    Task {
+                        await onSave(session)
+                    }
                 } label: {
                     Label("Add Exercise", systemImage: "plus.circle.fill")
                 }
@@ -610,6 +671,11 @@ private struct SessionEditorView: View {
             }
         }
         .navigationTitle(session.title.isEmpty ? "Session" : session.title)
+        .onDisappear {
+            Task {
+                await onSave(session)
+            }
+        }
     }
 }
 
@@ -639,6 +705,7 @@ private struct ExerciseSummaryRow: View {
 
 private struct ExerciseEditorView: View {
     @Binding var exercise: LoggedExercise
+    let onSave: () async -> Void
 
     var body: some View {
         Form {
@@ -678,13 +745,22 @@ private struct ExerciseEditorView: View {
                 .onDelete { offsets in
                     guard exercise.sets.count > offsets.count else {
                         exercise.sets = [.empty]
+                        Task {
+                            await onSave()
+                        }
                         return
                     }
                     exercise.sets.remove(atOffsets: offsets)
+                    Task {
+                        await onSave()
+                    }
                 }
 
                 Button {
                     exercise.sets.append(.empty)
+                    Task {
+                        await onSave()
+                    }
                 } label: {
                     Label("Add Blank Set", systemImage: "plus.circle.fill")
                 }
@@ -701,6 +777,11 @@ private struct ExerciseEditorView: View {
             }
         }
         .navigationTitle(exercise.name.isEmpty ? "Exercise" : exercise.name)
+        .onDisappear {
+            Task {
+                await onSave()
+            }
+        }
     }
 }
 
@@ -796,6 +877,334 @@ private struct CompactDecimalField: View {
                 value = trimmedValue.isEmpty ? nil : Double(trimmedValue)
             }
         )
+    }
+}
+
+@MainActor
+private final class WorkoutLogStore: ObservableObject {
+    @Published var sessions: [WorkoutSession] = []
+    @Published var isLoading = false
+    @Published var isSaving = false
+    @Published var errorMessage: String?
+
+    private let client = SupabaseManager.shared.client
+
+    func loadSessions() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let userID = try await currentUserID()
+            let sessionRows: [WorkoutSessionRecord] = try await client
+                .from("workout_sessions")
+                .select()
+                .eq("user_id", value: userID)
+                .order("session_date", ascending: false)
+                .execute()
+                .value
+
+            guard !sessionRows.isEmpty else {
+                sessions = []
+                isLoading = false
+                return
+            }
+
+            let sessionIDs = sessionRows.map(\.id)
+            let exerciseRows = try await loadExercises(sessionIDs: sessionIDs)
+            let exerciseIDs = exerciseRows.map(\.id)
+            let setRows = try await loadSets(exerciseIDs: exerciseIDs)
+
+            sessions = sessionRows.map { sessionRow in
+                let exercises = exerciseRows
+                    .filter { $0.sessionID == sessionRow.id }
+                    .sorted { $0.position < $1.position }
+                    .map { exerciseRow in
+                        let sets = setRows
+                            .filter { $0.exerciseID == exerciseRow.id }
+                            .sorted { $0.setNumber < $1.setNumber }
+                            .map {
+                                LoggedSet(
+                                    id: $0.id,
+                                    reps: $0.reps,
+                                    weight: $0.weight,
+                                    rpe: $0.rpe
+                                )
+                            }
+
+                        return LoggedExercise(
+                            id: exerciseRow.id,
+                            name: exerciseRow.name,
+                            sets: sets.isEmpty ? [.empty] : sets,
+                            notes: exerciseRow.notes ?? ""
+                        )
+                    }
+
+                return WorkoutSession(
+                    id: sessionRow.id,
+                    title: sessionRow.title,
+                    date: SupabaseDateCoding.decode(sessionRow.sessionDate),
+                    exercises: exercises,
+                    notes: sessionRow.notes ?? ""
+                )
+            }
+        } catch {
+            errorMessage = "Could not load workout sessions: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    func saveSession(_ session: WorkoutSession) async {
+        isSaving = true
+        errorMessage = nil
+
+        do {
+            let userID = try await currentUserID()
+
+            let sessionUpsert = WorkoutSessionUpsert(
+                id: session.id,
+                userID: userID,
+                title: session.title,
+                sessionDate: SupabaseDateCoding.encode(session.date),
+                notes: session.notes.nilIfBlank
+            )
+
+            try await client
+                .from("workout_sessions")
+                .upsert(sessionUpsert, onConflict: "id", returning: .minimal)
+                .execute()
+
+            try await replaceExercises(for: session)
+        } catch {
+            errorMessage = "Could not save session: \(error.localizedDescription)"
+        }
+
+        isSaving = false
+    }
+
+    private func replaceExercises(for session: WorkoutSession) async throws {
+        let existingExercises = try await loadExercises(sessionIDs: [session.id])
+        let existingExerciseIDs = existingExercises.map(\.id)
+
+        if !existingExerciseIDs.isEmpty {
+            try await client
+                .from("workout_sets")
+                .delete(returning: .minimal)
+                .in("exercise_id", values: filterValues(existingExerciseIDs))
+                .execute()
+        }
+
+        try await client
+            .from("workout_exercises")
+            .delete(returning: .minimal)
+            .eq("session_id", value: session.id)
+            .execute()
+
+        let exerciseUpserts = session.exercises.enumerated().map { index, exercise in
+            WorkoutExerciseUpsert(
+                id: exercise.id,
+                sessionID: session.id,
+                name: exercise.name,
+                notes: exercise.notes.nilIfBlank,
+                position: index
+            )
+        }
+
+        guard !exerciseUpserts.isEmpty else {
+            return
+        }
+
+        try await client
+            .from("workout_exercises")
+            .insert(exerciseUpserts, returning: .minimal)
+            .execute()
+
+        let setUpserts = session.exercises.flatMap { exercise in
+            exercise.sets.enumerated().map { index, set in
+                WorkoutSetUpsert(
+                    id: set.id,
+                    exerciseID: exercise.id,
+                    setNumber: index,
+                    reps: set.reps,
+                    weight: set.weight,
+                    rpe: set.rpe
+                )
+            }
+        }
+
+        guard !setUpserts.isEmpty else {
+            return
+        }
+
+        try await client
+            .from("workout_sets")
+            .insert(setUpserts, returning: .minimal)
+            .execute()
+    }
+
+    private func loadExercises(sessionIDs: [UUID]) async throws -> [WorkoutExerciseRecord] {
+        guard !sessionIDs.isEmpty else {
+            return []
+        }
+
+        return try await client
+            .from("workout_exercises")
+            .select()
+            .in("session_id", values: filterValues(sessionIDs))
+            .order("position", ascending: true)
+            .execute()
+            .value
+    }
+
+    private func loadSets(exerciseIDs: [UUID]) async throws -> [WorkoutSetRecord] {
+        guard !exerciseIDs.isEmpty else {
+            return []
+        }
+
+        return try await client
+            .from("workout_sets")
+            .select()
+            .in("exercise_id", values: filterValues(exerciseIDs))
+            .order("set_number", ascending: true)
+            .execute()
+            .value
+    }
+
+    private func currentUserID() async throws -> UUID {
+        try await client.auth.session.user.id
+    }
+
+    private func filterValues(_ ids: [UUID]) -> [any PostgrestFilterValue] {
+        ids.map { $0 as any PostgrestFilterValue }
+    }
+}
+
+private enum SupabaseDateCoding {
+    private static let formatterWithFractions: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    private static let formatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    static func encode(_ date: Date) -> String {
+        formatterWithFractions.string(from: date)
+    }
+
+    static func decode(_ value: String) -> Date {
+        formatterWithFractions.date(from: value) ?? formatter.date(from: value) ?? Date()
+    }
+}
+
+private struct WorkoutSessionRecord: Decodable {
+    let id: UUID
+    let userID: UUID
+    let title: String
+    let sessionDate: String
+    let notes: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case title
+        case sessionDate = "session_date"
+        case notes
+    }
+}
+
+private struct WorkoutSessionUpsert: Encodable {
+    let id: UUID
+    let userID: UUID
+    let title: String
+    let sessionDate: String
+    let notes: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case title
+        case sessionDate = "session_date"
+        case notes
+    }
+}
+
+private struct WorkoutExerciseRecord: Decodable {
+    let id: UUID
+    let sessionID: UUID
+    let name: String
+    let notes: String?
+    let position: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case sessionID = "session_id"
+        case name
+        case notes
+        case position
+    }
+}
+
+private struct WorkoutExerciseUpsert: Encodable {
+    let id: UUID
+    let sessionID: UUID
+    let name: String
+    let notes: String?
+    let position: Int
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case sessionID = "session_id"
+        case name
+        case notes
+        case position
+    }
+}
+
+private struct WorkoutSetRecord: Decodable {
+    let id: UUID
+    let exerciseID: UUID
+    let setNumber: Int
+    let reps: Int?
+    let weight: Double?
+    let rpe: Double?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case exerciseID = "exercise_id"
+        case setNumber = "set_number"
+        case reps
+        case weight
+        case rpe
+    }
+}
+
+private struct WorkoutSetUpsert: Encodable {
+    let id: UUID
+    let exerciseID: UUID
+    let setNumber: Int
+    let reps: Int?
+    let weight: Double?
+    let rpe: Double?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case exerciseID = "exercise_id"
+        case setNumber = "set_number"
+        case reps
+        case weight
+        case rpe
+    }
+}
+
+private extension String {
+    var nilIfBlank: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 
