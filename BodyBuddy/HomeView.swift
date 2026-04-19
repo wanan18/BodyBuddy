@@ -124,7 +124,10 @@ private struct FloatingNavigationBar: View {
 private struct DashboardView: View {
     @EnvironmentObject var appState: AppState
 
-    private let steps = 7428
+    @AppStorage("dashboardStepCount") private var steps = 0
+    @AppStorage("dashboardDistance") private var distance = 0.0
+    @AppStorage("dashboardCalories") private var calories = 0
+    @AppStorage("dashboardWeightEntries") private var encodedWeightEntries = "[]"
     private let stepGoal = 10000
     private let recentWorkouts = WorkoutPreview.sampleData
 
@@ -137,7 +140,17 @@ private struct DashboardView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     header
-                    stepSummary
+                    NavigationLink {
+                        StepEntryView(
+                            steps: $steps,
+                            distance: $distance,
+                            calories: $calories,
+                            stepGoal: stepGoal
+                        )
+                    } label: {
+                        stepSummary
+                    }
+                    .buttonStyle(.plain)
                     todayPlan
                     quickActions
                     recentWorkoutSection
@@ -198,7 +211,7 @@ private struct DashboardView: View {
                         .font(.largeTitle)
                         .fontWeight(.bold)
 
-                    Text("\((stepGoal - steps).formatted()) left today")
+                    Text(stepGoalText)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -209,14 +222,48 @@ private struct DashboardView: View {
             Divider()
 
             HStack {
-                MetricPill(title: "Distance", value: "3.4 mi")
-                MetricPill(title: "Active", value: "46 min")
-                MetricPill(title: "Energy", value: "410 cal")
+                MetricPill(title: "Distance", value: distanceText)
+                MetricPill(title: "Goal", value: stepGoal.formatted())
+                MetricPill(title: "Energy", value: "\(calories.formatted()) cal")
             }
         }
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var stepGoalText: String {
+        let stepsLeft = max(stepGoal - steps, 0)
+
+        if stepsLeft == 0 {
+            return "Goal reached today"
+        }
+
+        return "\(stepsLeft.formatted()) left today"
+    }
+
+    private var distanceText: String {
+        "\(distance.formatted(.number.precision(.fractionLength(0...2)))) mi"
+    }
+
+    private var weightEntries: [WeightEntry] {
+        WeightEntry.decodeList(from: encodedWeightEntries)
+    }
+
+    private var latestWeightEntry: WeightEntry? {
+        weightEntries.sorted { $0.date > $1.date }.first
+    }
+
+    private var weightTileValue: String? {
+        guard let latestWeightEntry else {
+            return nil
+        }
+
+        return "\(latestWeightEntry.weight.formatted(.number.precision(.fractionLength(0...1)))) lb"
+    }
+
+    private var weightTileDetail: String? {
+        latestWeightEntry?.date.formatted(date: .abbreviated, time: .omitted)
     }
 
     private var todayPlan: some View {
@@ -256,7 +303,18 @@ private struct DashboardView: View {
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 DashboardAction(title: "Workout", systemImage: "plus.circle.fill", tint: .blue)
-                DashboardAction(title: "Weight", systemImage: "scalemass.fill", tint: .purple)
+                NavigationLink {
+                    WeightLogView(encodedEntries: $encodedWeightEntries)
+                } label: {
+                    DashboardAction(
+                        title: "Weight",
+                        value: weightTileValue ?? "Log weight",
+                        detail: weightTileDetail,
+                        systemImage: "scalemass.fill",
+                        tint: .purple
+                    )
+                }
+                .buttonStyle(.plain)
                 DashboardAction(title: "Meal", systemImage: "fork.knife", tint: .orange)
                 DashboardAction(title: "Water", systemImage: "drop.fill", tint: .cyan)
             }
@@ -285,6 +343,218 @@ private struct DashboardView: View {
     }
 }
 
+private struct StepEntryView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var steps: Int
+    @Binding var distance: Double
+    @Binding var calories: Int
+    let stepGoal: Int
+
+    @State private var stepText = ""
+    @State private var distanceText = ""
+    @State private var calorieText = ""
+
+    private var progress: Double {
+        guard stepGoal > 0 else {
+            return 0
+        }
+
+        return min(Double(parsedSteps) / Double(stepGoal), 1)
+    }
+
+    private var canSave: Bool {
+        isValidNumber(stepText, as: Int.self)
+            && isValidNumber(distanceText, as: Double.self)
+            && isValidNumber(calorieText, as: Int.self)
+            && parsedSteps >= 0
+            && parsedDistance >= 0
+            && parsedCalories >= 0
+    }
+
+    private var parsedSteps: Int {
+        Int(stepText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+    }
+
+    private var parsedDistance: Double {
+        Double(distanceText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+    }
+
+    private var parsedCalories: Int {
+        Int(calorieText.trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Steps")
+                                .font(.headline)
+
+                            Text("\(Int(progress * 100))% of \(stepGoal.formatted())")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+                    }
+
+                    ProgressView(value: progress)
+                        .tint(.green)
+                }
+                .padding(.vertical, 4)
+            }
+
+            Section {
+                TextField("Steps", text: $stepText)
+                    .keyboardType(.numberPad)
+
+                TextField("Distance (mi)", text: $distanceText)
+                    .keyboardType(.decimalPad)
+
+                TextField("Calories", text: $calorieText)
+                    .keyboardType(.numberPad)
+            } header: {
+                Text("Today's Total")
+            } footer: {
+                Text("Enter the totals you want shown on the dashboard tile.")
+            }
+        }
+        .navigationTitle("Step Summary")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    save()
+                }
+                .disabled(!canSave)
+            }
+        }
+        .onAppear {
+            stepText = steps == 0 ? "" : String(steps)
+            distanceText = distance == 0 ? "" : distance.formatted(.number.precision(.fractionLength(0...2)))
+            calorieText = calories == 0 ? "" : String(calories)
+        }
+    }
+
+    private func save() {
+        steps = parsedSteps
+        distance = parsedDistance
+        calories = parsedCalories
+        dismiss()
+    }
+
+    private func isValidNumber<T: LosslessStringConvertible>(_ value: String, as type: T.Type) -> Bool {
+        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedValue.isEmpty || T(trimmedValue) != nil
+    }
+}
+
+private struct WeightLogView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var encodedEntries: String
+    @State private var weightText = ""
+    @State private var selectedDate = Date()
+
+    private var entries: [WeightEntry] {
+        WeightEntry.decodeList(from: encodedEntries).sorted { $0.date > $1.date }
+    }
+
+    private var parsedWeight: Double? {
+        let trimmedValue = weightText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedValue.isEmpty else {
+            return nil
+        }
+
+        return Double(trimmedValue)
+    }
+
+    private var canSave: Bool {
+        guard let parsedWeight else {
+            return false
+        }
+
+        return parsedWeight > 0
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                TextField("Weight (lb)", text: $weightText)
+                    .keyboardType(.decimalPad)
+
+                DatePicker("Date", selection: $selectedDate, displayedComponents: [.date])
+            } header: {
+                Text("Log Weight")
+            } footer: {
+                Text("Save your current body weight for the selected date.")
+            }
+
+            if !entries.isEmpty {
+                Section("History") {
+                    ForEach(entries) { entry in
+                        HStack {
+                            Text(entry.date.formatted(date: .abbreviated, time: .omitted))
+
+                            Spacer()
+
+                            Text("\(entry.weight.formatted(.number.precision(.fractionLength(0...1)))) lb")
+                                .fontWeight(.semibold)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Weight")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save") {
+                    save()
+                }
+                .disabled(!canSave)
+            }
+        }
+        .onAppear {
+            if let latestEntry = entries.first {
+                selectedDate = Date()
+                weightText = latestEntry.weight.formatted(.number.precision(.fractionLength(0...1)))
+            }
+        }
+    }
+
+    private func save() {
+        guard let parsedWeight else {
+            return
+        }
+
+        var updatedEntries = WeightEntry.decodeList(from: encodedEntries)
+        let calendar = Calendar.current
+
+        updatedEntries.removeAll {
+            calendar.isDate($0.date, inSameDayAs: selectedDate)
+        }
+
+        updatedEntries.append(WeightEntry(date: selectedDate, weight: parsedWeight))
+        updatedEntries.sort { $0.date > $1.date }
+        encodedEntries = WeightEntry.encodeList(updatedEntries)
+        dismiss()
+    }
+}
+
 private struct ExerciseLogView: View {
     @StateObject private var store = WorkoutLogStore()
     @State private var selectedMode: ExerciseLogMode = .list
@@ -297,47 +567,62 @@ private struct ExerciseLogView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+            List {
+                Section {
                     header
+                        .listRowInsets(EdgeInsets(top: 16, leading: 16, bottom: 12, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                }
 
-                    if store.isLoading {
-                        ProgressView("Loading sessions...")
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 40)
+                if store.isLoading {
+                    ProgressView("Loading sessions...")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 32)
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                } else {
+                    if let errorMessage = store.errorMessage {
+                        Text(errorMessage)
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
+                            .padding()
+                            .background(Color(.secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
+
+                    if store.sessions.isEmpty {
+                        emptyState
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                     } else {
-                        if let errorMessage = store.errorMessage {
-                            Text(errorMessage)
-                                .font(.subheadline)
-                                .foregroundStyle(.red)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color(.secondarySystemGroupedBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-
-                        if store.sessions.isEmpty {
-                            emptyState
-                        } else {
-                            switch selectedMode {
-                            case .list:
-                                sessionList
-                            case .calendar:
-                                calendarView
-                            }
+                        switch selectedMode {
+                        case .list:
+                            sessionList
+                        case .calendar:
+                            calendarView
                         }
                     }
                 }
-                .padding()
-                .padding(.bottom, 108)
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .safeAreaPadding(.bottom, 108)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Exercise Log")
             .navigationDestination(for: UUID.self) { sessionID in
                 if let index = store.sessions.firstIndex(where: { $0.id == sessionID }) {
-                    SessionEditorView(session: $store.sessions[index]) { session in
-                        await store.saveSession(session)
-                    }
+                    SessionEditorView(
+                        session: $store.sessions[index],
+                        onSaveDetails: { session in
+                            await store.saveSessionDetails(session)
+                        },
+                        onSave: { session in
+                            await store.saveSession(session)
+                        }
+                    )
                 } else {
                     Text("Session not found")
                 }
@@ -413,49 +698,82 @@ private struct ExerciseLogView: View {
     }
 
     private var sessionList: some View {
-        VStack(spacing: 10) {
+        Section("Recent Sessions") {
             ForEach(sortedSessions) { session in
-                NavigationLink(value: session.id) {
+                Button {
+                    navigationPath.append(session.id)
+                } label: {
                     SessionRow(session: session)
                 }
                 .buttonStyle(.plain)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    deleteSessionButton(for: session)
+                }
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             }
         }
     }
 
     private var calendarView: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        Section {
             WorkoutCalendarView(
                 sessions: store.sessions,
                 selectedDate: $selectedCalendarDate
             )
+            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 12, trailing: 16))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
 
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Sessions")
-                    .font(.headline)
+            let sessionsForDay = store.sessions.filter {
+                Calendar.current.isDate($0.date, inSameDayAs: selectedCalendarDate)
+            }
+            .sorted { $0.date > $1.date }
 
-                let sessionsForDay = store.sessions.filter {
-                    Calendar.current.isDate($0.date, inSameDayAs: selectedCalendarDate)
-                }
-                .sorted { $0.date > $1.date }
-
-                if sessionsForDay.isEmpty {
-                    Text("No sessions logged for this date.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(Color(.secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else {
-                    ForEach(sessionsForDay) { session in
-                        NavigationLink(value: session.id) {
-                            SessionRow(session: session)
-                        }
-                        .buttonStyle(.plain)
+            if sessionsForDay.isEmpty {
+                Text("No sessions logged for this date.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding()
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            } else {
+                ForEach(sessionsForDay) { session in
+                    Button {
+                        navigationPath.append(session.id)
+                    } label: {
+                        SessionRow(session: session)
                     }
+                    .buttonStyle(.plain)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        deleteSessionButton(for: session)
+                    }
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
                 }
             }
+        } header: {
+            Text("Sessions")
+        }
+    }
+
+    private func deleteSessionButton(for session: WorkoutSession) -> some View {
+        Button(role: .destructive) {
+            deleteSession(session)
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+    }
+
+    private func deleteSession(_ session: WorkoutSession) {
+        store.sessions.removeAll { $0.id == session.id }
+
+        Task {
+            await store.deleteSession(session)
         }
     }
 }
@@ -629,13 +947,19 @@ private struct CalendarDayCell: View {
 
 private struct SessionEditorView: View {
     @Binding var session: WorkoutSession
+    let onSaveDetails: (WorkoutSession) async -> Void
     let onSave: (WorkoutSession) async -> Void
+    @State private var isShowingExercisePicker = false
+    @State private var detailsSaveTask: Task<Void, Never>?
 
     var body: some View {
         Form {
             Section("Session") {
-                TextField("Name", text: $session.title)
-                DatePicker("Date", selection: $session.date, displayedComponents: [.date])
+                TextField("Name", text: sessionTitleBinding)
+                    .onSubmit {
+                        saveCurrentSession()
+                    }
+                DatePicker("Date", selection: sessionDateBinding, displayedComponents: [.date])
             }
 
             Section("Exercises") {
@@ -656,25 +980,85 @@ private struct SessionEditorView: View {
                 }
 
                 Button {
-                    session.exercises.append(.empty)
-                    Task {
-                        await onSave(session)
-                    }
+                    isShowingExercisePicker = true
                 } label: {
                     Label("Add Exercise", systemImage: "plus.circle.fill")
                 }
             }
 
             Section("Notes") {
-                TextEditor(text: $session.notes)
+                TextEditor(text: sessionNotesBinding)
                     .frame(minHeight: 90)
             }
         }
         .navigationTitle(session.title.isEmpty ? "Session" : session.title)
-        .onDisappear {
-            Task {
-                await onSave(session)
+        .sheet(isPresented: $isShowingExercisePicker) {
+            ExercisePickerView { exerciseName in
+                session.exercises.append(LoggedExercise.empty(named: exerciseName))
+                Task {
+                    await onSave(session)
+                }
             }
+        }
+        .onDisappear {
+            detailsSaveTask?.cancel()
+            saveCurrentSession()
+        }
+    }
+
+    private var sessionTitleBinding: Binding<String> {
+        Binding(
+            get: {
+                session.title
+            },
+            set: { newValue in
+                session.title = newValue
+                scheduleDetailsSave(for: session)
+            }
+        )
+    }
+
+    private var sessionDateBinding: Binding<Date> {
+        Binding(
+            get: {
+                session.date
+            },
+            set: { newValue in
+                session.date = newValue
+                scheduleDetailsSave(for: session)
+            }
+        )
+    }
+
+    private var sessionNotesBinding: Binding<String> {
+        Binding(
+            get: {
+                session.notes
+            },
+            set: { newValue in
+                session.notes = newValue
+                scheduleDetailsSave(for: session)
+            }
+        )
+    }
+
+    private func scheduleDetailsSave(for sessionToSave: WorkoutSession) {
+        detailsSaveTask?.cancel()
+        detailsSaveTask = Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            guard !Task.isCancelled else {
+                return
+            }
+
+            await onSaveDetails(sessionToSave)
+        }
+    }
+
+    private func saveCurrentSession() {
+        let sessionToSave = session
+
+        Task {
+            await onSaveDetails(sessionToSave)
         }
     }
 }
@@ -706,11 +1090,18 @@ private struct ExerciseSummaryRow: View {
 private struct ExerciseEditorView: View {
     @Binding var exercise: LoggedExercise
     let onSave: () async -> Void
+    @State private var isShowingExercisePicker = false
 
     var body: some View {
         Form {
             Section("Exercise") {
                 TextField("Name", text: $exercise.name)
+
+                Button {
+                    isShowingExercisePicker = true
+                } label: {
+                    Label("Choose From Library", systemImage: "magnifyingglass")
+                }
             }
 
             Section {
@@ -762,7 +1153,7 @@ private struct ExerciseEditorView: View {
                         await onSave()
                     }
                 } label: {
-                    Label("Add Blank Set", systemImage: "plus.circle.fill")
+                    Label("Add Set", systemImage: "plus.circle.fill")
                 }
                 .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
             } header: {
@@ -777,10 +1168,228 @@ private struct ExerciseEditorView: View {
             }
         }
         .navigationTitle(exercise.name.isEmpty ? "Exercise" : exercise.name)
+        .sheet(isPresented: $isShowingExercisePicker) {
+            ExercisePickerView { exerciseName in
+                exercise.name = exerciseName
+                Task {
+                    await onSave()
+                }
+            }
+        }
         .onDisappear {
             Task {
                 await onSave()
             }
+        }
+    }
+}
+
+private struct ExercisePickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var store = UserExerciseLibraryStore()
+    @State private var searchText = ""
+    @State private var isShowingCreateExercise = false
+    let onSelect: (String) -> Void
+
+    private var filteredExercises: [ExerciseLibrary.Category] {
+        let trimmedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        var categories: [ExerciseLibrary.Category] = []
+
+        if !store.exercises.isEmpty {
+            categories.append(
+                ExerciseLibrary.Category(
+                    name: "My Exercises",
+                    exercises: store.exercises.map { $0.name }
+                )
+            )
+        }
+
+        categories.append(contentsOf: ExerciseLibrary.categories)
+
+        guard !trimmedSearch.isEmpty else {
+            return categories
+        }
+
+        return categories.compactMap { category in
+            let exercises = category.exercises.filter {
+                $0.localizedCaseInsensitiveContains(trimmedSearch)
+                    || store.muscles(for: $0).contains {
+                        $0.localizedCaseInsensitiveContains(trimmedSearch)
+                    }
+            }
+
+            guard !exercises.isEmpty else {
+                return nil
+            }
+
+            return ExerciseLibrary.Category(name: category.name, exercises: exercises)
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                if let errorMessage = store.errorMessage {
+                    Text(errorMessage)
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
+                }
+
+                ForEach(filteredExercises) { category in
+                    Section(category.name) {
+                        ForEach(category.exercises, id: \.self) { exercise in
+                            Button {
+                                onSelect(exercise)
+                                dismiss()
+                            } label: {
+                                ExerciseLibraryRow(
+                                    name: exercise,
+                                    muscleGroups: store.muscles(for: exercise)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .searchable(text: $searchText, prompt: "Search exercises")
+            .navigationTitle("Exercise Library")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingCreateExercise = true
+                    } label: {
+                        Label("Create Exercise", systemImage: "plus")
+                    }
+                }
+            }
+            .overlay {
+                if store.isLoading {
+                    ProgressView("Loading exercises...")
+                } else if filteredExercises.isEmpty {
+                    ContentUnavailableView(
+                        "No Exercises Found",
+                        systemImage: "magnifyingglass",
+                        description: Text("Try a different name or create a new exercise.")
+                    )
+                }
+            }
+            .task {
+                await store.loadExercises()
+            }
+            .sheet(isPresented: $isShowingCreateExercise) {
+                CreateUserExerciseView { name, muscleGroups in
+                    await store.createExercise(name: name, muscleGroups: muscleGroups)
+                }
+            }
+        }
+    }
+}
+
+private struct ExerciseLibraryRow: View {
+    let name: String
+    let muscleGroups: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(name)
+                .foregroundStyle(.primary)
+
+            if !muscleGroups.isEmpty {
+                Text(muscleGroups.joined(separator: ", "))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct CreateUserExerciseView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var exerciseName = ""
+    @State private var selectedMuscles: Set<String> = []
+    @State private var isSaving = false
+    let onCreate: (String, [String]) async -> Void
+
+    private var canCreate: Bool {
+        !exerciseName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !selectedMuscles.isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Exercise") {
+                    TextField("Exercise Name", text: $exerciseName)
+                        .textInputAutocapitalization(.words)
+                }
+
+                Section {
+                    ForEach(ExerciseLibrary.muscleGroups, id: \.self) { muscle in
+                        Button {
+                            toggle(muscle)
+                        } label: {
+                            HStack {
+                                Text(muscle)
+                                    .foregroundStyle(.primary)
+
+                                Spacer()
+
+                                if selectedMuscles.contains(muscle) {
+                                    Image(systemName: "checkmark")
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Muscles")
+                } footer: {
+                    Text("Pick every muscle this exercise primarily trains.")
+                }
+            }
+            .navigationTitle("Create Exercise")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .disabled(isSaving)
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        save()
+                    }
+                    .disabled(!canCreate || isSaving)
+                }
+            }
+        }
+    }
+
+    private func toggle(_ muscle: String) {
+        if selectedMuscles.contains(muscle) {
+            selectedMuscles.remove(muscle)
+        } else {
+            selectedMuscles.insert(muscle)
+        }
+    }
+
+    private func save() {
+        let name = exerciseName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let muscles = ExerciseLibrary.muscleGroups.filter { selectedMuscles.contains($0) }
+
+        isSaving = true
+        Task {
+            await onCreate(name, muscles)
+            isSaving = false
+            dismiss()
         }
     }
 }
@@ -800,41 +1409,13 @@ private struct ExerciseSetEditorRow: View {
             CompactDecimalField(placeholder: "0", value: $set.weight, unit: "lb")
                 .frame(maxWidth: .infinity)
 
-            CompactNumberField(placeholder: "0", value: $set.reps)
+            CompactDecimalField(placeholder: "0", value: $set.reps, unit: nil)
                 .frame(width: 70)
 
             CompactDecimalField(placeholder: "-", value: $set.rpe, unit: nil)
                 .frame(width: 64)
         }
         .padding(.vertical, 2)
-    }
-}
-
-private struct CompactNumberField: View {
-    let placeholder: String
-    @Binding var value: Int?
-
-    var body: some View {
-        TextField(placeholder, text: textBinding)
-            .keyboardType(.numberPad)
-            .multilineTextAlignment(.center)
-            .textFieldStyle(.plain)
-            .frame(height: 36)
-            .padding(.horizontal, 8)
-            .background(Color(.tertiarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var textBinding: Binding<String> {
-        Binding(
-            get: {
-                value.map(String.init) ?? ""
-            },
-            set: { newValue in
-                let trimmedValue = newValue.trimmingCharacters(in: .whitespaces)
-                value = trimmedValue.isEmpty ? nil : Int(trimmedValue)
-            }
-        )
     }
 }
 
@@ -959,27 +1540,61 @@ private final class WorkoutLogStore: ObservableObject {
         errorMessage = nil
 
         do {
-            let userID = try await currentUserID()
-
-            let sessionUpsert = WorkoutSessionUpsert(
-                id: session.id,
-                userID: userID,
-                title: session.title,
-                sessionDate: SupabaseDateCoding.encode(session.date),
-                notes: session.notes.nilIfBlank
-            )
-
-            try await client
-                .from("workout_sessions")
-                .upsert(sessionUpsert, onConflict: "id", returning: .minimal)
-                .execute()
-
+            try await upsertSessionDetails(session)
             try await replaceExercises(for: session)
         } catch {
             errorMessage = "Could not save session: \(error.localizedDescription)"
         }
 
         isSaving = false
+    }
+
+    func saveSessionDetails(_ session: WorkoutSession) async {
+        isSaving = true
+        errorMessage = nil
+
+        do {
+            try await upsertSessionDetails(session)
+        } catch {
+            errorMessage = "Could not save session: \(error.localizedDescription)"
+        }
+
+        isSaving = false
+    }
+
+    func deleteSession(_ session: WorkoutSession) async {
+        isSaving = true
+        errorMessage = nil
+
+        do {
+            try await client
+                .from("workout_sessions")
+                .delete(returning: .minimal)
+                .eq("id", value: session.id)
+                .execute()
+        } catch {
+            errorMessage = "Could not delete session: \(error.localizedDescription)"
+            await loadSessions()
+        }
+
+        isSaving = false
+    }
+
+    private func upsertSessionDetails(_ session: WorkoutSession) async throws {
+        let userID = try await currentUserID()
+
+        let sessionUpsert = WorkoutSessionUpsert(
+            id: session.id,
+            userID: userID,
+            title: session.title,
+            sessionDate: SupabaseDateCoding.encode(session.date),
+            notes: session.notes.nilIfBlank
+        )
+
+        try await client
+            .from("workout_sessions")
+            .upsert(sessionUpsert, onConflict: "id", returning: .minimal)
+            .execute()
     }
 
     private func replaceExercises(for session: WorkoutSession) async throws {
@@ -1169,7 +1784,7 @@ private struct WorkoutSetRecord: Decodable {
     let id: UUID
     let exerciseID: UUID
     let setNumber: Int
-    let reps: Int?
+    let reps: Double?
     let weight: Double?
     let rpe: Double?
 
@@ -1187,7 +1802,7 @@ private struct WorkoutSetUpsert: Encodable {
     let id: UUID
     let exerciseID: UUID
     let setNumber: Int
-    let reps: Int?
+    let reps: Double?
     let weight: Double?
     let rpe: Double?
 
@@ -1201,10 +1816,382 @@ private struct WorkoutSetUpsert: Encodable {
     }
 }
 
+@MainActor
+private final class UserExerciseLibraryStore: ObservableObject {
+    @Published var exercises: [UserExercise] = []
+    @Published var isLoading = false
+    @Published var isSaving = false
+    @Published var errorMessage: String?
+
+    private let client = SupabaseManager.shared.client
+
+    func loadExercises() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let userID = try await currentUserID()
+            let records: [UserExerciseRecord] = try await client
+                .from("user_exercises")
+                .select()
+                .eq("user_id", value: userID)
+                .order("name", ascending: true)
+                .execute()
+                .value
+
+            exercises = records.map {
+                UserExercise(id: $0.id, name: $0.name, muscleGroups: $0.muscleGroups)
+            }
+        } catch {
+            errorMessage = "Could not load custom exercises: \(error.localizedDescription)"
+        }
+
+        isLoading = false
+    }
+
+    func createExercise(name: String, muscleGroups: [String]) async {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            return
+        }
+
+        isSaving = true
+        errorMessage = nil
+
+        do {
+            let userID = try await currentUserID()
+            let upsert = UserExerciseUpsert(
+                id: UUID(),
+                userID: userID,
+                name: trimmedName,
+                muscleGroups: muscleGroups
+            )
+
+            try await client
+                .from("user_exercises")
+                .insert(upsert, returning: .minimal)
+                .execute()
+
+            exercises.append(
+                UserExercise(
+                    id: upsert.id,
+                    name: upsert.name,
+                    muscleGroups: upsert.muscleGroups
+                )
+            )
+            exercises.sort {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        } catch {
+            errorMessage = "Could not create exercise: \(error.localizedDescription)"
+        }
+
+        isSaving = false
+    }
+
+    func muscles(for exerciseName: String) -> [String] {
+        if let exercise = exercises.first(where: { $0.name == exerciseName }) {
+            return exercise.muscleGroups
+        }
+
+        return ExerciseLibrary.muscles(for: exerciseName)
+    }
+
+    private func currentUserID() async throws -> UUID {
+        try await client.auth.session.user.id
+    }
+}
+
+private struct UserExercise: Identifiable {
+    let id: UUID
+    let name: String
+    let muscleGroups: [String]
+}
+
+private struct UserExerciseRecord: Decodable {
+    let id: UUID
+    let userID: UUID
+    let name: String
+    let muscleGroups: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case name
+        case muscleGroups = "muscle_groups"
+    }
+}
+
+private struct UserExerciseUpsert: Encodable {
+    let id: UUID
+    let userID: UUID
+    let name: String
+    let muscleGroups: [String]
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case userID = "user_id"
+        case name
+        case muscleGroups = "muscle_groups"
+    }
+}
+
+private enum ExerciseLibrary {
+    struct Category: Identifiable {
+        let name: String
+        let exercises: [String]
+
+        var id: String {
+            name
+        }
+    }
+
+    static let categories = [
+        Category(
+            name: "Chest",
+            exercises: [
+                "Barbell Bench Press",
+                "Incline Barbell Bench Press",
+                "Decline Barbell Bench Press",
+                "Flat Dumbbell Bench Press",
+                "Incline Dumbbell Bench Press",
+                "Decline Dumbbell Bench Press",
+                "Machine Chest Press",
+                "Incline Machine Chest Press",
+                "Smith Machine Bench Press",
+                "Pec Deck",
+                "Cable Fly",
+                "Low-to-High Cable Fly",
+                "High-to-Low Cable Fly",
+                "Push-Up",
+                "Weighted Push-Up",
+                "Dips",
+                "Close-Grip Bench Press"
+            ]
+        ),
+        Category(
+            name: "Shoulders",
+            exercises: [
+                "Seated Dumbbell Shoulder Press",
+                "Standing Dumbbell Shoulder Press",
+                "Barbell Overhead Press",
+                "Seated Barbell Overhead Press",
+                "Machine Shoulder Press",
+                "Arnold Press",
+                "Lateral Raise",
+                "Cable Lateral Raise",
+                "Rear Delt Fly",
+                "Reverse Pec Deck",
+                "Front Raise",
+                "Upright Row",
+                "Face Pull"
+            ]
+        ),
+        Category(
+            name: "Back",
+            exercises: [
+                "Lat Pulldown",
+                "Wide-Grip Lat Pulldown",
+                "Close-Grip Lat Pulldown",
+                "Neutral-Grip Lat Pulldown",
+                "Pull-Up",
+                "Assisted Pull-Up",
+                "Weighted Pull-Up",
+                "Chin-Up",
+                "Assisted Chin-Up",
+                "Weighted Chin-Up",
+                "Barbell Row",
+                "Pendlay Row",
+                "T-Bar Row",
+                "Chest-Supported Row",
+                "Seated Cable Row",
+                "Single-Arm Cable Row",
+                "One-Arm Dumbbell Row",
+                "Meadows Row",
+                "Machine Row",
+                "Straight-Arm Pulldown",
+                "Dumbbell Pullover",
+                "Shrug",
+                "Barbell Shrug",
+                "Dumbbell Shrug"
+            ]
+        ),
+        Category(
+            name: "Biceps",
+            exercises: [
+                "Barbell Curl",
+                "EZ-Bar Curl",
+                "Dumbbell Bicep Curl",
+                "Alternating Dumbbell Curl",
+                "Seated Dumbbell Bicep Curl",
+                "Hammer Curl",
+                "Cross-Body Hammer Curl",
+                "Preacher Curl",
+                "Cable Curl",
+                "Incline Dumbbell Curl",
+                "Concentration Curl",
+                "Reverse Curl"
+            ]
+        ),
+        Category(
+            name: "Triceps",
+            exercises: [
+                "Triceps Pushdown",
+                "Rope Triceps Pushdown",
+                "Straight-Bar Triceps Pushdown",
+                "Overhead Triceps Extension",
+                "Cable Overhead Triceps Extension",
+                "Dumbbell Overhead Triceps Extension",
+                "Skull Crusher",
+                "Close-Grip Push-Up",
+                "Bench Dip",
+                "Machine Dip"
+            ]
+        ),
+        Category(
+            name: "Quads",
+            exercises: [
+                "Barbell Back Squat",
+                "High-Bar Squat",
+                "Low-Bar Squat",
+                "Front Squat",
+                "Goblet Squat",
+                "Hack Squat",
+                "Smith Machine Squat",
+                "Leg Press",
+                "Single-Leg Press",
+                "Leg Extension",
+                "Walking Lunge",
+                "Reverse Lunge",
+                "Stationary Lunge",
+                "Bulgarian Split Squat",
+                "Step-Up",
+                "Smith Machine Lunge",
+                "Sissy Squat"
+            ]
+        ),
+        Category(
+            name: "Hamstrings and Glutes",
+            exercises: [
+                "Deadlift",
+                "Conventional Deadlift",
+                "Sumo Deadlift",
+                "Romanian Deadlift",
+                "Stiff-Leg Deadlift",
+                "Trap Bar Deadlift",
+                "Rack Pull",
+                "Good Morning",
+                "Barbell Hip Thrust",
+                "Dumbbell Hip Thrust",
+                "Glute Bridge",
+                "Cable Pull-Through",
+                "Hamstring Curl",
+                "Seated Hamstring Curl",
+                "Lying Hamstring Curl",
+                "Nordic Hamstring Curl",
+                "Glute Kickback",
+                "Cable Glute Kickback",
+                "Back Extension",
+                "Reverse Hyperextension"
+            ]
+        ),
+        Category(
+            name: "Calves",
+            exercises: [
+                "Standing Calf Raise",
+                "Seated Calf Raise",
+                "Leg Press Calf Raise",
+                "Donkey Calf Raise"
+            ]
+        ),
+        Category(
+            name: "Core",
+            exercises: [
+                "Ab Crunch",
+                "Cable Crunch",
+                "Machine Crunch",
+                "Decline Sit-Up",
+                "Sit-Up",
+                "Crunch",
+                "Reverse Crunch",
+                "Hanging Knee Raise",
+                "Hanging Leg Raise",
+                "Roman Chair Leg Raise",
+                "Ab Wheel Rollout",
+                "Plank",
+                "Side Plank",
+                "Russian Twist",
+                "Mountain Climber",
+                "Toe Touch",
+                "Dead Bug",
+                "Bicycle Crunch",
+                "Flutter Kick",
+                "V-Up",
+                "Wood Chop",
+                "Cable Wood Chop",
+                "Pallof Press"
+            ]
+        )
+    ]
+
+    static let muscleGroups = [
+        "Chest",
+        "Shoulders",
+        "Back",
+        "Biceps",
+        "Triceps",
+        "Quads",
+        "Hamstrings",
+        "Glutes",
+        "Calves",
+        "Core"
+    ]
+
+    static func muscles(for exerciseName: String) -> [String] {
+        categories.first { $0.exercises.contains(exerciseName) }
+            .map { muscles(forCategory: $0.name) } ?? []
+    }
+
+    private static func muscles(forCategory category: String) -> [String] {
+        switch category {
+        case "Hamstrings and Glutes":
+            return ["Hamstrings", "Glutes"]
+        default:
+            return [category]
+        }
+    }
+}
+
 private extension String {
     var nilIfBlank: String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
+    }
+}
+
+private struct WeightEntry: Codable, Identifiable {
+    var id: Date {
+        date
+    }
+
+    let date: Date
+    let weight: Double
+
+    static func decodeList(from encodedEntries: String) -> [WeightEntry] {
+        guard let data = encodedEntries.data(using: .utf8) else {
+            return []
+        }
+
+        return (try? JSONDecoder().decode([WeightEntry].self, from: data)) ?? []
+    }
+
+    static func encodeList(_ entries: [WeightEntry]) -> String {
+        guard let data = try? JSONEncoder().encode(entries),
+              let encodedEntries = String(data: data, encoding: .utf8) else {
+            return "[]"
+        }
+
+        return encodedEntries
     }
 }
 
@@ -1316,17 +2303,21 @@ private struct LoggedExercise: Identifiable {
     static var empty: LoggedExercise {
         LoggedExercise(name: "New Exercise", sets: [.empty], notes: "")
     }
+
+    static func empty(named name: String) -> LoggedExercise {
+        LoggedExercise(name: name, sets: [.empty], notes: "")
+    }
 }
 
 private struct LoggedSet: Identifiable {
     let id: UUID
-    var reps: Int?
+    var reps: Double?
     var weight: Double?
     var rpe: Double?
 
     var previewText: String {
         let weightText = weight.map { "\($0.formatted()) lb" } ?? "weight"
-        let repsText = reps.map { "\($0) reps" } ?? "reps"
+        let repsText = reps.map { "\($0.formatted(.number.precision(.fractionLength(0...2)))) reps" } ?? "reps"
 
         if let rpe {
             return "\(weightText) × \(repsText) · RPE \(rpe.formatted(.number.precision(.fractionLength(0...1))))"
@@ -1335,7 +2326,7 @@ private struct LoggedSet: Identifiable {
         return "\(weightText) × \(repsText)"
     }
 
-    init(id: UUID = UUID(), reps: Int? = nil, weight: Double? = nil, rpe: Double? = nil) {
+    init(id: UUID = UUID(), reps: Double? = nil, weight: Double? = nil, rpe: Double? = nil) {
         self.id = id
         self.reps = reps
         self.weight = weight
@@ -1496,27 +2487,43 @@ private struct MetricPill: View {
 
 private struct DashboardAction: View {
     let title: String
+    var value: String?
+    var detail: String?
     let systemImage: String
     let tint: Color
 
     var body: some View {
-        Button {
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .foregroundStyle(tint)
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .foregroundStyle(tint)
 
+            VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .fontWeight(.medium)
+                    .fontWeight(.semibold)
 
-                Spacer(minLength: 0)
+                if let value {
+                    Text(value)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+
+                if let detail {
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
             }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            Spacer(minLength: 0)
         }
-        .buttonStyle(.plain)
+        .padding()
+        .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 

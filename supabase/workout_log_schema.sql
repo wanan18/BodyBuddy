@@ -6,6 +6,15 @@
 -- drop table if exists public.workout_exercises cascade;
 -- drop table if exists public.workout_sessions cascade;
 
+create table if not exists public.user_exercises (
+    id uuid primary key,
+    user_id uuid not null references auth.users(id) on delete cascade,
+    name text not null,
+    muscle_groups text[] not null default '{}',
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+);
+
 create table if not exists public.workout_sessions (
     id uuid primary key,
     user_id uuid not null references auth.users(id) on delete cascade,
@@ -30,12 +39,19 @@ create table if not exists public.workout_sets (
     id uuid primary key,
     exercise_id uuid not null references public.workout_exercises(id) on delete cascade,
     set_number integer not null default 0,
-    reps integer,
+    reps numeric,
     weight numeric,
     rpe numeric,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
+
+alter table public.workout_sets
+    alter column reps type numeric using reps::numeric,
+    alter column weight type numeric using weight::numeric;
+
+create unique index if not exists user_exercises_user_name_idx
+    on public.user_exercises(user_id, lower(name));
 
 create index if not exists workout_sessions_user_date_idx
     on public.workout_sessions(user_id, session_date desc);
@@ -46,9 +62,39 @@ create index if not exists workout_exercises_session_position_idx
 create index if not exists workout_sets_exercise_number_idx
     on public.workout_sets(exercise_id, set_number);
 
+alter table public.user_exercises enable row level security;
 alter table public.workout_sessions enable row level security;
 alter table public.workout_exercises enable row level security;
 alter table public.workout_sets enable row level security;
+
+drop policy if exists "Users can read their exercise library" on public.user_exercises;
+create policy "Users can read their exercise library"
+on public.user_exercises
+for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert their exercise library" on public.user_exercises;
+create policy "Users can insert their exercise library"
+on public.user_exercises
+for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update their exercise library" on public.user_exercises;
+create policy "Users can update their exercise library"
+on public.user_exercises
+for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete their exercise library" on public.user_exercises;
+create policy "Users can delete their exercise library"
+on public.user_exercises
+for delete
+to authenticated
+using (auth.uid() = user_id);
 
 drop policy if exists "Users can read their workout sessions" on public.workout_sessions;
 create policy "Users can read their workout sessions"
