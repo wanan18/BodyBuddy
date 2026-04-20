@@ -993,8 +993,8 @@ private struct SessionEditorView: View {
         }
         .navigationTitle(session.title.isEmpty ? "Session" : session.title)
         .sheet(isPresented: $isShowingExercisePicker) {
-            ExercisePickerView { exerciseName in
-                session.exercises.append(LoggedExercise.empty(named: exerciseName))
+            ExercisePickerView { exercise in
+                session.exercises.append(exercise)
                 Task {
                     await onSave(session)
                 }
@@ -1075,11 +1075,13 @@ private struct ExerciseSummaryRow: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { index, set in
-                    Text("Set \(index + 1): \(set.previewText)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            if exercise.kind == .lifting {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { index, set in
+                        Text("Set \(index + 1): \(set.previewText)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
@@ -1104,62 +1106,111 @@ private struct ExerciseEditorView: View {
                 }
             }
 
-            Section {
-                HStack(spacing: 8) {
-                    Text("Set")
-                        .frame(width: 26, alignment: .leading)
+            if exercise.kind == .cardio {
+                Section {
+                    DurationField(title: "Duration", totalSeconds: $exercise.cardio.durationSeconds)
 
-                    Text("Weight")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Text("Reps")
-                        .frame(width: 70, alignment: .leading)
-
-                    Text("RPE")
-                        .frame(width: 64, alignment: .leading)
-                }
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
-
-                ForEach(exercise.sets.indices, id: \.self) { index in
-                    ExerciseSetEditorRow(
-                        set: $exercise.sets[index],
-                        setNumber: index + 1
+                    DistanceUnitField(
+                        title: "Distance",
+                        meters: $exercise.cardio.distanceMeters,
+                        unit: $exercise.cardio.distanceUnit
                     )
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+
+                    CardioMetricField(title: "Calories Burned", value: $exercise.cardio.caloriesBurned, unit: "cal")
+                } header: {
+                    Text("Cardio")
+                } footer: {
+                    Text("Log the totals for this cardio exercise.")
                 }
-                .onDelete { offsets in
-                    guard exercise.sets.count > offsets.count else {
-                        exercise.sets = [.empty]
+
+                Section {
+                    ForEach(exercise.cardio.laps.indices, id: \.self) { index in
+                        CardioLapEditorRow(
+                            lap: $exercise.cardio.laps[index],
+                            lapNumber: index + 1
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    }
+                    .onDelete { offsets in
+                        exercise.cardio.laps.remove(atOffsets: offsets)
                         Task {
                             await onSave()
                         }
-                        return
                     }
-                    exercise.sets.remove(atOffsets: offsets)
-                    Task {
-                        await onSave()
-                    }
-                }
 
-                Button {
-                    exercise.sets.append(.empty)
-                    Task {
-                        await onSave()
+                    Button {
+                        exercise.cardio.laps.append(.empty)
+                        Task {
+                            await onSave()
+                        }
+                    } label: {
+                        Label("Add Lap", systemImage: "plus.circle.fill")
                     }
-                } label: {
-                    Label("Add Set", systemImage: "plus.circle.fill")
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                } header: {
+                    Text("Laps")
+                } footer: {
+                    Text("Swipe a lap to delete it.")
                 }
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-            } header: {
-                Text("Sets")
-            } footer: {
-                Text("Swipe a set to delete it. New sets start blank so you can log as you go.")
+            } else {
+                Section {
+                    HStack(spacing: 8) {
+                        Text("Set")
+                            .frame(width: 26, alignment: .leading)
+
+                        Text("Weight")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text("Reps")
+                            .frame(width: 70, alignment: .leading)
+
+                        Text("RPE")
+                            .frame(width: 64, alignment: .leading)
+                    }
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 0, trailing: 16))
+
+                    ForEach(exercise.sets.indices, id: \.self) { index in
+                        ExerciseSetEditorRow(
+                            set: $exercise.sets[index],
+                            setNumber: index + 1
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    }
+                    .onDelete { offsets in
+                        guard exercise.sets.count > offsets.count else {
+                            exercise.sets = [.empty]
+                            Task {
+                                await onSave()
+                            }
+                            return
+                        }
+                        exercise.sets.remove(atOffsets: offsets)
+                        Task {
+                            await onSave()
+                        }
+                    }
+
+                    Button {
+                        exercise.sets.append(.empty)
+                        Task {
+                            await onSave()
+                        }
+                    } label: {
+                        Label("Add Set", systemImage: "plus.circle.fill")
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                } header: {
+                    Text("Sets")
+                } footer: {
+                    Text("Swipe a set to delete it. New sets start blank so you can log as you go.")
+                }
             }
 
             Section("Additional Info") {
@@ -1169,8 +1220,8 @@ private struct ExerciseEditorView: View {
         }
         .navigationTitle(exercise.name.isEmpty ? "Exercise" : exercise.name)
         .sheet(isPresented: $isShowingExercisePicker) {
-            ExercisePickerView { exerciseName in
-                exercise.name = exerciseName
+            ExercisePickerView { selectedExercise in
+                exercise.applyLibrarySelection(selectedExercise)
                 Task {
                     await onSave()
                 }
@@ -1186,73 +1237,48 @@ private struct ExerciseEditorView: View {
 
 private struct ExercisePickerView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var store = UserExerciseLibraryStore()
-    @State private var searchText = ""
-    @State private var isShowingCreateExercise = false
-    let onSelect: (String) -> Void
-
-    private var filteredExercises: [ExerciseLibrary.Category] {
-        let trimmedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        var categories: [ExerciseLibrary.Category] = []
-
-        if !store.exercises.isEmpty {
-            categories.append(
-                ExerciseLibrary.Category(
-                    name: "My Exercises",
-                    exercises: store.exercises.map { $0.name }
-                )
-            )
-        }
-
-        categories.append(contentsOf: ExerciseLibrary.categories)
-
-        guard !trimmedSearch.isEmpty else {
-            return categories
-        }
-
-        return categories.compactMap { category in
-            let exercises = category.exercises.filter {
-                $0.localizedCaseInsensitiveContains(trimmedSearch)
-                    || store.muscles(for: $0).contains {
-                        $0.localizedCaseInsensitiveContains(trimmedSearch)
-                    }
-            }
-
-            guard !exercises.isEmpty else {
-                return nil
-            }
-
-            return ExerciseLibrary.Category(name: category.name, exercises: exercises)
-        }
-    }
+    let onSelect: (LoggedExercise) -> Void
 
     var body: some View {
         NavigationStack {
-            List {
-                if let errorMessage = store.errorMessage {
-                    Text(errorMessage)
-                        .font(.subheadline)
-                        .foregroundStyle(.red)
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Choose a library")
+                        .font(.headline)
 
-                ForEach(filteredExercises) { category in
-                    Section(category.name) {
-                        ForEach(category.exercises, id: \.self) { exercise in
-                            Button {
-                                onSelect(exercise)
-                                dismiss()
-                            } label: {
-                                ExerciseLibraryRow(
-                                    name: exercise,
-                                    muscleGroups: store.muscles(for: exercise)
-                                )
-                            }
+                    NavigationLink {
+                        LiftingExerciseLibraryView { exercise in
+                            onSelect(exercise)
+                            dismiss()
                         }
+                    } label: {
+                        ExerciseLibraryTile(
+                            title: "Lifting",
+                            subtitle: "Strength exercises, custom lifts, sets, reps, and load.",
+                            systemImage: "dumbbell.fill",
+                            tint: .blue
+                        )
                     }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        CardioExerciseLibraryView { exercise in
+                            onSelect(exercise)
+                            dismiss()
+                        }
+                    } label: {
+                        ExerciseLibraryTile(
+                            title: "Cardio",
+                            subtitle: "Cardio exercise library coming soon.",
+                            systemImage: "figure.run",
+                            tint: .green
+                        )
+                    }
+                    .buttonStyle(.plain)
                 }
+                .padding()
             }
-            .listStyle(.insetGrouped)
-            .searchable(text: $searchText, prompt: "Search exercises")
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Exercise Library")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1260,35 +1286,329 @@ private struct ExercisePickerView: View {
                         dismiss()
                     }
                 }
+            }
+        }
+    }
+}
 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isShowingCreateExercise = true
+private struct LiftingExerciseLibraryView: View {
+    @StateObject private var store = UserExerciseLibraryStore()
+    @State private var isShowingCreateExercise = false
+    let onSelect: (LoggedExercise) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let errorMessage = store.errorMessage {
+                    Text(errorMessage)
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+
+                Text("Muscle Groups")
+                    .font(.headline)
+
+                ForEach(ExerciseLibrary.muscleGroups, id: \.self) { muscleGroup in
+                    NavigationLink {
+                        MuscleGroupExerciseListView(
+                            muscleGroup: muscleGroup,
+                            store: store,
+                            onSelect: onSelect
+                        )
                     } label: {
-                        Label("Create Exercise", systemImage: "plus")
+                        ExerciseLibraryTile(
+                            title: muscleGroup,
+                            subtitle: muscleGroupSubtitle(for: muscleGroup),
+                            systemImage: muscleGroupIcon(for: muscleGroup),
+                            tint: muscleGroupTint(for: muscleGroup)
+                        )
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            .overlay {
-                if store.isLoading {
-                    ProgressView("Loading exercises...")
-                } else if filteredExercises.isEmpty {
-                    ContentUnavailableView(
-                        "No Exercises Found",
-                        systemImage: "magnifyingglass",
-                        description: Text("Try a different name or create a new exercise.")
-                    )
-                }
-            }
-            .task {
-                await store.loadExercises()
-            }
-            .sheet(isPresented: $isShowingCreateExercise) {
-                CreateUserExerciseView { name, muscleGroups in
-                    await store.createExercise(name: name, muscleGroups: muscleGroups)
+            .padding()
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Lifting")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isShowingCreateExercise = true
+                } label: {
+                    Label("Create Exercise", systemImage: "plus")
                 }
             }
         }
+        .overlay {
+            if store.isLoading {
+                ProgressView("Loading exercises...")
+            }
+        }
+        .task {
+            await store.loadExercises()
+        }
+        .sheet(isPresented: $isShowingCreateExercise) {
+            CreateUserExerciseView { name, muscleGroups in
+                await store.createExercise(name: name, muscleGroups: muscleGroups)
+            }
+        }
+    }
+
+    private func muscleGroupSubtitle(for muscleGroup: String) -> String {
+        let builtInCount = ExerciseLibrary.exercises(forMuscleGroup: muscleGroup).count
+        let userCount = store.exercises.filter {
+            $0.muscleGroups.contains(muscleGroup)
+        }.count
+        let totalCount = builtInCount + userCount
+
+        if userCount == 0 {
+            return "\(totalCount) exercises"
+        }
+
+        return "\(totalCount) exercises · \(userCount) custom"
+    }
+
+    private func muscleGroupIcon(for muscleGroup: String) -> String {
+        switch muscleGroup {
+        case "Chest":
+            return "figure.strengthtraining.traditional"
+        case "Shoulders":
+            return "figure.arms.open"
+        case "Back":
+            return "figure.pullup"
+        case "Biceps":
+            return "dumbbell.fill"
+        case "Triceps":
+            return "figure.strengthtraining.functional"
+        case "Quads":
+            return "figure.squat"
+        case "Hamstrings":
+            return "figure.walk"
+        case "Glutes":
+            return "figure.run"
+        case "Calves":
+            return "shoeprints.fill"
+        case "Core":
+            return "figure.core.training"
+        default:
+            return "dumbbell.fill"
+        }
+    }
+
+    private func muscleGroupTint(for muscleGroup: String) -> Color {
+        switch muscleGroup {
+        case "Chest":
+            return .red
+        case "Shoulders":
+            return .orange
+        case "Back":
+            return .blue
+        case "Biceps":
+            return .purple
+        case "Triceps":
+            return .pink
+        case "Quads":
+            return .green
+        case "Hamstrings":
+            return .mint
+        case "Glutes":
+            return .indigo
+        case "Calves":
+            return .teal
+        case "Core":
+            return .cyan
+        default:
+            return .accentColor
+        }
+    }
+}
+
+private struct MuscleGroupExerciseListView: View {
+    let muscleGroup: String
+    @ObservedObject var store: UserExerciseLibraryStore
+    let onSelect: (LoggedExercise) -> Void
+    @State private var searchText = ""
+
+    private var builtInExercises: [String] {
+        ExerciseLibrary.exercises(forMuscleGroup: muscleGroup)
+    }
+
+    private var customExercises: [UserExercise] {
+        store.exercises.filter {
+            $0.muscleGroups.contains(muscleGroup)
+        }
+    }
+
+    private var filteredBuiltInExercises: [String] {
+        guard !trimmedSearch.isEmpty else {
+            return builtInExercises
+        }
+
+        return builtInExercises.filter {
+            $0.localizedCaseInsensitiveContains(trimmedSearch)
+        }
+    }
+
+    private var filteredCustomExercises: [UserExercise] {
+        guard !trimmedSearch.isEmpty else {
+            return customExercises
+        }
+
+        return customExercises.filter {
+            $0.name.localizedCaseInsensitiveContains(trimmedSearch)
+                || $0.muscleGroups.contains {
+                    $0.localizedCaseInsensitiveContains(trimmedSearch)
+                }
+        }
+    }
+
+    private var trimmedSearch: String {
+        searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        List {
+            if !filteredCustomExercises.isEmpty {
+                Section("My Exercises") {
+                    ForEach(filteredCustomExercises) { exercise in
+                        Button {
+                            onSelect(.empty(named: exercise.name, kind: .lifting))
+                        } label: {
+                            ExerciseLibraryRow(
+                                name: exercise.name,
+                                muscleGroups: exercise.muscleGroups
+                            )
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                deleteExercise(exercise)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !filteredBuiltInExercises.isEmpty {
+                Section("Exercises") {
+                    ForEach(filteredBuiltInExercises, id: \.self) { exercise in
+                        Button {
+                            onSelect(.empty(named: exercise, kind: .lifting))
+                        } label: {
+                            ExerciseLibraryRow(
+                                name: exercise,
+                                muscleGroups: ExerciseLibrary.muscles(for: exercise)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .searchable(text: $searchText, prompt: "Search \(muscleGroup.lowercased()) exercises")
+        .navigationTitle(muscleGroup)
+        .overlay {
+            if filteredBuiltInExercises.isEmpty && filteredCustomExercises.isEmpty {
+                ContentUnavailableView(
+                    "No Exercises Found",
+                    systemImage: "magnifyingglass",
+                    description: Text("Try a different search or create a custom exercise for this muscle.")
+                )
+            }
+        }
+    }
+
+    private func deleteExercise(_ exercise: UserExercise) {
+        Task {
+            await store.deleteExercise(exercise)
+        }
+    }
+}
+
+private struct CardioExerciseLibraryView: View {
+    let onSelect: (LoggedExercise) -> Void
+    @State private var searchText = ""
+
+    private var filteredExercises: [String] {
+        let trimmedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedSearch.isEmpty else {
+            return CardioExerciseLibrary.exercises
+        }
+
+        return CardioExerciseLibrary.exercises.filter {
+            $0.localizedCaseInsensitiveContains(trimmedSearch)
+        }
+    }
+
+    var body: some View {
+        List {
+            Section("Exercises") {
+                ForEach(filteredExercises, id: \.self) { exercise in
+                    Button {
+                        onSelect(.empty(named: exercise, kind: .cardio))
+                    } label: {
+                        ExerciseLibraryRow(name: exercise, muscleGroups: [])
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .searchable(text: $searchText, prompt: "Search cardio exercises")
+        .navigationTitle("Cardio")
+        .navigationBarTitleDisplayMode(.inline)
+        .overlay {
+            if filteredExercises.isEmpty {
+                ContentUnavailableView(
+                    "No Cardio Found",
+                    systemImage: "magnifyingglass",
+                    description: Text("Try a different cardio exercise.")
+                )
+            }
+        }
+    }
+}
+
+private struct ExerciseLibraryTile: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.title2)
+                .frame(width: 46, height: 46)
+                .background(tint.opacity(0.14))
+                .foregroundStyle(tint)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.primary)
+
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
 
@@ -1419,6 +1739,174 @@ private struct ExerciseSetEditorRow: View {
     }
 }
 
+private struct CardioMetricField: View {
+    let title: String
+    @Binding var value: Double?
+    let unit: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Spacer()
+
+            CompactDecimalField(placeholder: "0", value: $value, unit: unit)
+                .frame(width: 132)
+        }
+    }
+}
+
+private struct CardioLapEditorRow: View {
+    @Binding var lap: CardioLap
+    let lapNumber: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Lap \(lapNumber)")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+
+            DistanceUnitField(
+                title: "Distance",
+                meters: $lap.distanceMeters,
+                unit: $lap.distanceUnit
+            )
+
+            DurationField(title: "Time", totalSeconds: $lap.timeSeconds)
+        }
+        .padding(.vertical, 6)
+    }
+}
+
+private struct DistanceUnitField: View {
+    let title: String
+    @Binding var meters: Double?
+    @Binding var unit: DistanceUnit
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                CompactDecimalField(placeholder: "0", value: displayValueBinding, unit: nil)
+                    .frame(maxWidth: .infinity)
+
+                Picker("Unit", selection: $unit) {
+                    ForEach(DistanceUnit.allCases) { unit in
+                        Text(unit.rawValue).tag(unit)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 132)
+            }
+        }
+    }
+
+    private var displayValueBinding: Binding<Double?> {
+        Binding(
+            get: {
+                guard let meters else {
+                    return nil
+                }
+
+                return unit.value(fromMeters: meters)
+            },
+            set: { newValue in
+                meters = newValue.map { unit.meters(from: $0) }
+            }
+        )
+    }
+}
+
+private struct DurationField: View {
+    let title: String
+    @Binding var totalSeconds: Int?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                CompactIntegerField(placeholder: "0", value: hoursBinding, unit: "hr")
+                CompactIntegerField(placeholder: "0", value: minutesBinding, unit: "min")
+                CompactIntegerField(placeholder: "0", value: secondsBinding, unit: "sec")
+            }
+        }
+    }
+
+    private var hoursBinding: Binding<Int?> {
+        durationComponentBinding(component: .hours)
+    }
+
+    private var minutesBinding: Binding<Int?> {
+        durationComponentBinding(component: .minutes)
+    }
+
+    private var secondsBinding: Binding<Int?> {
+        durationComponentBinding(component: .seconds)
+    }
+
+    private func durationComponentBinding(component: DurationComponent) -> Binding<Int?> {
+        Binding(
+            get: {
+                component.value(from: totalSeconds ?? 0)
+            },
+            set: { newValue in
+                setDurationComponent(component, to: newValue ?? 0)
+            }
+        )
+    }
+
+    private func setDurationComponent(_ component: DurationComponent, to value: Int) {
+        let currentSeconds = max(totalSeconds ?? 0, 0)
+        let hours = DurationComponent.hours.value(from: currentSeconds) ?? 0
+        let minutes = DurationComponent.minutes.value(from: currentSeconds) ?? 0
+        let seconds = DurationComponent.seconds.value(from: currentSeconds) ?? 0
+        let boundedValue = max(value, 0)
+
+        switch component {
+        case .hours:
+            totalSeconds = boundedValue * 3600 + minutes * 60 + seconds
+        case .minutes:
+            totalSeconds = hours * 3600 + min(boundedValue, 59) * 60 + seconds
+        case .seconds:
+            totalSeconds = hours * 3600 + minutes * 60 + min(boundedValue, 59)
+        }
+
+        if totalSeconds == 0 {
+            totalSeconds = nil
+        }
+    }
+}
+
+private enum DurationComponent {
+    case hours
+    case minutes
+    case seconds
+
+    func value(from totalSeconds: Int) -> Int? {
+        let safeSeconds = max(totalSeconds, 0)
+        let value: Int
+
+        switch self {
+        case .hours:
+            value = safeSeconds / 3600
+        case .minutes:
+            value = (safeSeconds % 3600) / 60
+        case .seconds:
+            value = safeSeconds % 60
+        }
+
+        return value == 0 ? nil : value
+    }
+}
+
 private struct CompactDecimalField: View {
     let placeholder: String
     @Binding var value: Double?
@@ -1435,7 +1923,9 @@ private struct CompactDecimalField: View {
                 Text(unit)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .frame(width: 14, alignment: .trailing)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .frame(width: unit.count > 2 ? 24 : 16, alignment: .trailing)
             }
         }
         .frame(height: 36)
@@ -1456,6 +1946,44 @@ private struct CompactDecimalField: View {
             set: { newValue in
                 let trimmedValue = newValue.trimmingCharacters(in: .whitespaces)
                 value = trimmedValue.isEmpty ? nil : Double(trimmedValue)
+            }
+        )
+    }
+}
+
+private struct CompactIntegerField: View {
+    let placeholder: String
+    @Binding var value: Int?
+    let unit: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            TextField(placeholder, text: textBinding)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .textFieldStyle(.plain)
+
+            Text(unit)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .frame(width: 24, alignment: .trailing)
+        }
+        .frame(height: 36)
+        .padding(.horizontal, 8)
+        .background(Color(.tertiarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var textBinding: Binding<String> {
+        Binding(
+            get: {
+                value.map(String.init) ?? ""
+            },
+            set: { newValue in
+                let trimmedValue = newValue.trimmingCharacters(in: .whitespaces)
+                value = trimmedValue.isEmpty ? nil : Int(trimmedValue)
             }
         )
     }
@@ -1494,6 +2022,7 @@ private final class WorkoutLogStore: ObservableObject {
             let exerciseRows = try await loadExercises(sessionIDs: sessionIDs)
             let exerciseIDs = exerciseRows.map(\.id)
             let setRows = try await loadSets(exerciseIDs: exerciseIDs)
+            let lapRows = try await loadCardioLaps(exerciseIDs: exerciseIDs)
 
             sessions = sessionRows.map { sessionRow in
                 let exercises = exerciseRows
@@ -1512,11 +2041,31 @@ private final class WorkoutLogStore: ObservableObject {
                                 )
                             }
 
+                        let exerciseKind = ExerciseKind(rawValue: exerciseRow.exerciseType) ?? .lifting
+
                         return LoggedExercise(
                             id: exerciseRow.id,
                             name: exerciseRow.name,
-                            sets: sets.isEmpty ? [.empty] : sets,
-                            notes: exerciseRow.notes ?? ""
+                            kind: exerciseKind,
+                            sets: exerciseKind == .lifting && sets.isEmpty ? [.empty] : sets,
+                            notes: exerciseRow.notes ?? "",
+                            cardio: CardioLog(
+                                durationSeconds: exerciseRow.resolvedDurationSeconds,
+                                distanceMeters: exerciseRow.resolvedDistanceMeters,
+                                distanceUnit: DistanceUnit(rawValue: exerciseRow.distanceUnit ?? "") ?? .mile,
+                                caloriesBurned: exerciseRow.caloriesBurned,
+                                laps: lapRows
+                                    .filter { $0.exerciseID == exerciseRow.id }
+                                    .sorted { $0.lapNumber < $1.lapNumber }
+                                    .map {
+                                        CardioLap(
+                                            id: $0.id,
+                                            distanceMeters: $0.resolvedDistanceMeters,
+                                            distanceUnit: DistanceUnit(rawValue: $0.distanceUnit ?? "") ?? .mile,
+                                            timeSeconds: $0.resolvedTimeSeconds
+                                        )
+                                    }
+                            )
                         )
                     }
 
@@ -1607,6 +2156,12 @@ private final class WorkoutLogStore: ObservableObject {
                 .delete(returning: .minimal)
                 .in("exercise_id", values: filterValues(existingExerciseIDs))
                 .execute()
+
+            try await client
+                .from("workout_cardio_laps")
+                .delete(returning: .minimal)
+                .in("exercise_id", values: filterValues(existingExerciseIDs))
+                .execute()
         }
 
         try await client
@@ -1620,8 +2175,13 @@ private final class WorkoutLogStore: ObservableObject {
                 id: exercise.id,
                 sessionID: session.id,
                 name: exercise.name,
+                exerciseType: exercise.kind.rawValue,
                 notes: exercise.notes.nilIfBlank,
-                position: index
+                position: index,
+                durationSeconds: exercise.cardio.durationSeconds,
+                distanceMeters: exercise.cardio.distanceMeters,
+                distanceUnit: exercise.cardio.distanceUnit.rawValue,
+                caloriesBurned: exercise.cardio.caloriesBurned
             )
         }
 
@@ -1634,7 +2194,7 @@ private final class WorkoutLogStore: ObservableObject {
             .insert(exerciseUpserts, returning: .minimal)
             .execute()
 
-        let setUpserts = session.exercises.flatMap { exercise in
+        let setUpserts = session.exercises.filter { $0.kind == .lifting }.flatMap { exercise in
             exercise.sets.enumerated().map { index, set in
                 WorkoutSetUpsert(
                     id: set.id,
@@ -1647,13 +2207,33 @@ private final class WorkoutLogStore: ObservableObject {
             }
         }
 
-        guard !setUpserts.isEmpty else {
+        if !setUpserts.isEmpty {
+            try await client
+                .from("workout_sets")
+                .insert(setUpserts, returning: .minimal)
+                .execute()
+        }
+
+        let lapUpserts = session.exercises.filter { $0.kind == .cardio }.flatMap { exercise in
+            exercise.cardio.laps.enumerated().map { index, lap in
+                WorkoutCardioLapUpsert(
+                    id: lap.id,
+                    exerciseID: exercise.id,
+                    lapNumber: index,
+                    distanceMeters: lap.distanceMeters,
+                    distanceUnit: lap.distanceUnit.rawValue,
+                    timeSeconds: lap.timeSeconds
+                )
+            }
+        }
+
+        guard !lapUpserts.isEmpty else {
             return
         }
 
         try await client
-            .from("workout_sets")
-            .insert(setUpserts, returning: .minimal)
+            .from("workout_cardio_laps")
+            .insert(lapUpserts, returning: .minimal)
             .execute()
     }
 
@@ -1681,6 +2261,20 @@ private final class WorkoutLogStore: ObservableObject {
             .select()
             .in("exercise_id", values: filterValues(exerciseIDs))
             .order("set_number", ascending: true)
+            .execute()
+            .value
+    }
+
+    private func loadCardioLaps(exerciseIDs: [UUID]) async throws -> [WorkoutCardioLapRecord] {
+        guard !exerciseIDs.isEmpty else {
+            return []
+        }
+
+        return try await client
+            .from("workout_cardio_laps")
+            .select()
+            .in("exercise_id", values: filterValues(exerciseIDs))
+            .order("lap_number", ascending: true)
             .execute()
             .value
     }
@@ -1752,15 +2346,37 @@ private struct WorkoutExerciseRecord: Decodable {
     let id: UUID
     let sessionID: UUID
     let name: String
+    let exerciseType: String
     let notes: String?
     let position: Int
+    let durationMinutes: Double?
+    let distance: Double?
+    let durationSeconds: Int?
+    let distanceMeters: Double?
+    let distanceUnit: String?
+    let caloriesBurned: Double?
+
+    var resolvedDurationSeconds: Int? {
+        durationSeconds ?? durationMinutes.map { Int(($0 * 60).rounded()) }
+    }
+
+    var resolvedDistanceMeters: Double? {
+        distanceMeters ?? distance.map { DistanceUnit.mile.meters(from: $0) }
+    }
 
     private enum CodingKeys: String, CodingKey {
         case id
         case sessionID = "session_id"
         case name
+        case exerciseType = "exercise_type"
         case notes
         case position
+        case durationMinutes = "duration_minutes"
+        case distance
+        case durationSeconds = "duration_seconds"
+        case distanceMeters = "distance_meters"
+        case distanceUnit = "distance_unit"
+        case caloriesBurned = "calories_burned"
     }
 }
 
@@ -1768,15 +2384,25 @@ private struct WorkoutExerciseUpsert: Encodable {
     let id: UUID
     let sessionID: UUID
     let name: String
+    let exerciseType: String
     let notes: String?
     let position: Int
+    let durationSeconds: Int?
+    let distanceMeters: Double?
+    let distanceUnit: String
+    let caloriesBurned: Double?
 
     private enum CodingKeys: String, CodingKey {
         case id
         case sessionID = "session_id"
         case name
+        case exerciseType = "exercise_type"
         case notes
         case position
+        case durationSeconds = "duration_seconds"
+        case distanceMeters = "distance_meters"
+        case distanceUnit = "distance_unit"
+        case caloriesBurned = "calories_burned"
     }
 }
 
@@ -1813,6 +2439,54 @@ private struct WorkoutSetUpsert: Encodable {
         case reps
         case weight
         case rpe
+    }
+}
+
+private struct WorkoutCardioLapRecord: Decodable {
+    let id: UUID
+    let exerciseID: UUID
+    let lapNumber: Int
+    let distance: Double?
+    let timeMinutes: Double?
+    let distanceMeters: Double?
+    let distanceUnit: String?
+    let timeSeconds: Int?
+
+    var resolvedDistanceMeters: Double? {
+        distanceMeters ?? distance.map { DistanceUnit.mile.meters(from: $0) }
+    }
+
+    var resolvedTimeSeconds: Int? {
+        timeSeconds ?? timeMinutes.map { Int(($0 * 60).rounded()) }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case exerciseID = "exercise_id"
+        case lapNumber = "lap_number"
+        case distance
+        case timeMinutes = "time_minutes"
+        case distanceMeters = "distance_meters"
+        case distanceUnit = "distance_unit"
+        case timeSeconds = "time_seconds"
+    }
+}
+
+private struct WorkoutCardioLapUpsert: Encodable {
+    let id: UUID
+    let exerciseID: UUID
+    let lapNumber: Int
+    let distanceMeters: Double?
+    let distanceUnit: String
+    let timeSeconds: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case exerciseID = "exercise_id"
+        case lapNumber = "lap_number"
+        case distanceMeters = "distance_meters"
+        case distanceUnit = "distance_unit"
+        case timeSeconds = "time_seconds"
     }
 }
 
@@ -1889,6 +2563,26 @@ private final class UserExerciseLibraryStore: ObservableObject {
         isSaving = false
     }
 
+    func deleteExercise(_ exercise: UserExercise) async {
+        let previousExercises = exercises
+        exercises.removeAll { $0.id == exercise.id }
+        isSaving = true
+        errorMessage = nil
+
+        do {
+            try await client
+                .from("user_exercises")
+                .delete(returning: .minimal)
+                .eq("id", value: exercise.id)
+                .execute()
+        } catch {
+            exercises = previousExercises
+            errorMessage = "Could not delete exercise: \(error.localizedDescription)"
+        }
+
+        isSaving = false
+    }
+
     func muscles(for exerciseName: String) -> [String] {
         if let exercise = exercises.first(where: { $0.name == exerciseName }) {
             return exercise.muscleGroups
@@ -1934,6 +2628,21 @@ private struct UserExerciseUpsert: Encodable {
         case name
         case muscleGroups = "muscle_groups"
     }
+}
+
+private enum CardioExerciseLibrary {
+    static let exercises = [
+        "Run",
+        "Walk",
+        "Incline Treadmill Walk",
+        "Bike",
+        "Swim",
+        "Row",
+        "Elliptical",
+        "Stair Climber",
+        "Jump Rope",
+        "Hike"
+    ]
 }
 
 private enum ExerciseLibrary {
@@ -2152,6 +2861,12 @@ private enum ExerciseLibrary {
             .map { muscles(forCategory: $0.name) } ?? []
     }
 
+    static func exercises(forMuscleGroup muscleGroup: String) -> [String] {
+        categories
+            .filter { muscles(forCategory: $0.name).contains(muscleGroup) }
+            .flatMap(\.exercises)
+    }
+
     private static func muscles(forCategory category: String) -> [String] {
         switch category {
         case "Hamstrings and Glutes":
@@ -2278,14 +2993,20 @@ private struct WorkoutSession: Identifiable {
 private struct LoggedExercise: Identifiable {
     let id: UUID
     var name: String
+    var kind: ExerciseKind
     var sets: [LoggedSet]
     var notes: String
+    var cardio: CardioLog
 
     var topWeight: Double {
         sets.compactMap(\.weight).max() ?? 0
     }
 
     var summary: String {
+        if kind == .cardio {
+            return cardio.summary
+        }
+
         if topWeight == 0 {
             return "\(sets.count) sets"
         }
@@ -2293,19 +3014,143 @@ private struct LoggedExercise: Identifiable {
         return "\(sets.count) sets · top \(topWeight.formatted()) lb"
     }
 
-    init(id: UUID = UUID(), name: String, sets: [LoggedSet], notes: String) {
+    init(
+        id: UUID = UUID(),
+        name: String,
+        kind: ExerciseKind = .lifting,
+        sets: [LoggedSet],
+        notes: String,
+        cardio: CardioLog = .empty
+    ) {
         self.id = id
         self.name = name
+        self.kind = kind
         self.sets = sets
         self.notes = notes
+        self.cardio = cardio
     }
 
     static var empty: LoggedExercise {
         LoggedExercise(name: "New Exercise", sets: [.empty], notes: "")
     }
 
-    static func empty(named name: String) -> LoggedExercise {
-        LoggedExercise(name: name, sets: [.empty], notes: "")
+    static func empty(named name: String, kind: ExerciseKind = .lifting) -> LoggedExercise {
+        LoggedExercise(
+            name: name,
+            kind: kind,
+            sets: kind == .lifting ? [.empty] : [],
+            notes: "",
+            cardio: kind == .cardio ? .starter : .empty
+        )
+    }
+
+    mutating func applyLibrarySelection(_ selectedExercise: LoggedExercise) {
+        name = selectedExercise.name
+        kind = selectedExercise.kind
+        sets = selectedExercise.kind == .lifting ? selectedExercise.sets : []
+        cardio = selectedExercise.kind == .cardio ? selectedExercise.cardio : .empty
+    }
+}
+
+private enum ExerciseKind: String {
+    case lifting
+    case cardio
+}
+
+private enum DistanceUnit: String, CaseIterable, Identifiable {
+    case mile = "mi"
+    case kilometer = "km"
+    case meter = "m"
+
+    var id: String {
+        rawValue
+    }
+
+    private var metersPerUnit: Double {
+        switch self {
+        case .mile:
+            return 1609.344
+        case .kilometer:
+            return 1000
+        case .meter:
+            return 1
+        }
+    }
+
+    func meters(from value: Double) -> Double {
+        value * metersPerUnit
+    }
+
+    func value(fromMeters meters: Double) -> Double {
+        meters / metersPerUnit
+    }
+}
+
+private struct CardioLog {
+    var durationSeconds: Int?
+    var distanceMeters: Double?
+    var distanceUnit: DistanceUnit
+    var caloriesBurned: Double?
+    var laps: [CardioLap]
+
+    var summary: String {
+        let durationText = durationSeconds.map { Self.formatDuration($0) }
+        let distanceText = distanceMeters.map { "\(distanceUnit.value(fromMeters: $0).formatted(.number.precision(.fractionLength(0...2)))) \(distanceUnit.rawValue)" }
+        let calorieText = caloriesBurned.map { "\($0.formatted(.number.precision(.fractionLength(0...0)))) cal" }
+        let values = [durationText, distanceText, calorieText].compactMap { $0 }
+
+        if values.isEmpty {
+            return laps.isEmpty ? "Duration, distance, and calories" : "\(laps.count) laps"
+        }
+
+        if laps.isEmpty {
+            return values.joined(separator: " · ")
+        }
+
+        return "\(values.joined(separator: " · ")) · \(laps.count) laps"
+    }
+
+    static let empty = CardioLog(durationSeconds: nil, distanceMeters: nil, distanceUnit: .mile, caloriesBurned: nil, laps: [])
+    static let starter = CardioLog(durationSeconds: nil, distanceMeters: nil, distanceUnit: .mile, caloriesBurned: nil, laps: [.empty])
+
+    private static func formatDuration(_ totalSeconds: Int) -> String {
+        let safeSeconds = max(totalSeconds, 0)
+        let hours = safeSeconds / 3600
+        let minutes = (safeSeconds % 3600) / 60
+        let seconds = safeSeconds % 60
+
+        if hours > 0 {
+            return "\(hours)h \(minutes)m \(seconds)s"
+        }
+
+        if minutes > 0 {
+            return "\(minutes)m \(seconds)s"
+        }
+
+        return "\(seconds)s"
+    }
+}
+
+private struct CardioLap: Identifiable {
+    let id: UUID
+    var distanceMeters: Double?
+    var distanceUnit: DistanceUnit
+    var timeSeconds: Int?
+
+    static var empty: CardioLap {
+        CardioLap(id: UUID(), distanceMeters: nil, distanceUnit: .mile, timeSeconds: nil)
+    }
+
+    init(
+        id: UUID = UUID(),
+        distanceMeters: Double? = nil,
+        distanceUnit: DistanceUnit = .mile,
+        timeSeconds: Int? = nil
+    ) {
+        self.id = id
+        self.distanceMeters = distanceMeters
+        self.distanceUnit = distanceUnit
+        self.timeSeconds = timeSeconds
     }
 }
 
